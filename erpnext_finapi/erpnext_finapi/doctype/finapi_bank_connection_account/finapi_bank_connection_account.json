@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "creation": "2026-06-23 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "finapi_account_id",
+  "account_name",
+  "iban",
+  "account_type",
+  "currency",
+  "bank_account"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "finapi_account_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "finAPI Account ID",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "account_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Account Name"
+  },
+  {
+   "columns": 2,
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "IBAN"
+  },
+  {
+   "fieldname": "account_type",
+   "fieldtype": "Data",
+   "label": "Account Type"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "columns": 3,
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "ERPNext Bank Account",
+   "options": "Bank Account",
+   "description": "Native ERPNext Bank Account this finAPI account maps to."
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-23 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext finAPI",
+ "name": "finAPI Bank Connection Account",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

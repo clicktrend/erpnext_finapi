@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "autoname": "field:finapi_username",
+ "creation": "2026-06-23 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "naming_rule": "By fieldname",
+ "field_order": [
+  "company",
+  "environment",
+  "column_break_main",
+  "finapi_user_id",
+  "is_registered",
+  "section_credentials",
+  "finapi_username",
+  "finapi_password"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "Sandbox",
+   "fieldname": "environment",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Environment",
+   "options": "Sandbox\nLive",
+   "reqd": 1,
+   "description": "Which finAPI environment this user belongs to. Sandbox and Live are separate user pools."
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "finapi_user_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "finAPI User ID",
+   "read_only": 1,
+   "description": "Assigned by finAPI on registration."
+  },
+  {
+   "default": "0",
+   "fieldname": "is_registered",
+   "fieldtype": "Check",
+   "label": "Registered at finAPI",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_credentials",
+   "fieldtype": "Section Break",
+   "label": "Credentials"
+  },
+  {
+   "fieldname": "finapi_username",
+   "fieldtype": "Data",
+   "label": "finAPI Username",
+   "reqd": 1,
+   "unique": 1,
+   "description": "The finAPI user id/login. Used for the password-grant user token."
+  },
+  {
+   "fieldname": "finapi_password",
+   "fieldtype": "Password",
+   "label": "finAPI Password"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-23 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext finAPI",
+ "name": "finAPI User",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

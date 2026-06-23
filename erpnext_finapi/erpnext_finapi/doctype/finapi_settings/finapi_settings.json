@@ -1,0 +1,144 @@
+{
+ "actions": [],
+ "creation": "2026-06-23 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_environment",
+  "environment",
+  "api_version",
+  "column_break_env",
+  "api_host",
+  "webform_host",
+  "section_clients",
+  "data_client_id",
+  "data_client_secret",
+  "column_break_admin",
+  "admin_client_id",
+  "admin_client_secret",
+  "section_callback",
+  "redirect_url",
+  "section_status",
+  "connection_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_environment",
+   "fieldtype": "Section Break",
+   "label": "Environment"
+  },
+  {
+   "default": "Sandbox",
+   "fieldname": "environment",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Environment",
+   "options": "Sandbox\nLive",
+   "reqd": 1,
+   "description": "Hosts are derived automatically. Sandbox is free and recommended for development."
+  },
+  {
+   "default": "V2",
+   "fieldname": "api_version",
+   "fieldtype": "Select",
+   "label": "API Version",
+   "options": "V2",
+   "read_only": 1,
+   "description": "The finAPI mandator must be scoped to V2."
+  },
+  {
+   "fieldname": "column_break_env",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "api_host",
+   "fieldtype": "Data",
+   "label": "API Host",
+   "read_only": 1,
+   "description": "Derived from Environment."
+  },
+  {
+   "fieldname": "webform_host",
+   "fieldtype": "Data",
+   "label": "WebForm Host",
+   "read_only": 1,
+   "description": "Derived from Environment (webform-sandbox / webform-live)."
+  },
+  {
+   "fieldname": "section_clients",
+   "fieldtype": "Section Break",
+   "label": "API Clients",
+   "description": "Two finAPI clients. The DATA client handles users/banks/webforms; the ADMIN client is mandatorAdmin-only. Using the wrong one returns 403."
+  },
+  {
+   "fieldname": "data_client_id",
+   "fieldtype": "Data",
+   "label": "Data Client ID"
+  },
+  {
+   "fieldname": "data_client_secret",
+   "fieldtype": "Password",
+   "label": "Data Client Secret"
+  },
+  {
+   "fieldname": "column_break_admin",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "admin_client_id",
+   "fieldtype": "Data",
+   "label": "Admin Client ID",
+   "description": "Optional. Only needed for the V1→V2 mandator switch / mandatorAdmin calls."
+  },
+  {
+   "fieldname": "admin_client_secret",
+   "fieldtype": "Password",
+   "label": "Admin Client Secret"
+  },
+  {
+   "fieldname": "section_callback",
+   "fieldtype": "Section Break",
+   "label": "WebForm 2.0 Callback"
+  },
+  {
+   "fieldname": "redirect_url",
+   "fieldtype": "Data",
+   "label": "Redirect URL",
+   "description": "Callback URL after a hosted WebForm completes. Must be whitelisted in the finAPI portal."
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "fieldname": "connection_status",
+   "fieldtype": "Small Text",
+   "label": "Last Connection Test",
+   "read_only": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-23 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext finAPI",
+ "name": "finAPI Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

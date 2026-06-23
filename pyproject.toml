@@ -1,0 +1,52 @@
+[project]
+name = "erpnext_finapi"
+authors = [
+    { name = "Adomio and contributors", email = "mitgravur@gmail.com" },
+]
+description = "Self-hosted finAPI bank-account integration for ERPNext — bring your own finAPI contract, sync transactions, reconcile natively."
+requires-python = ">=3.10"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+dynamic = ["version"]
+dependencies = [
+    # frappe and erpnext are installed and managed by bench (not pinned here).
+    # `requests` ships with frappe; declared for clarity of intent.
+]
+
+keywords = ["frappe", "erpnext", "finapi", "banking", "psd2", "open-banking", "bank-reconciliation"]
+
+[project.urls]
+Homepage = "https://github.com/clicktrend/erpnext_finapi"
+Repository = "https://github.com/clicktrend/erpnext_finapi"
+Issues = "https://github.com/clicktrend/erpnext_finapi/issues"
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+# Dev-only dependencies (installed when developer mode is enabled).
+[tool.bench.dev-dependencies]
+# package_name = "~=1.1.0"
+
+# Frappe convention: tabs, 110 chars, double quotes (matches frappe/erpnext).
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF"]
+ignore = [
+    "B017",
+    "B023",
+    "E101",
+    "E402",
+    "E501",
+    "F401",
+    "W191",
+]
+typing-modules = ["frappe.types.DF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true

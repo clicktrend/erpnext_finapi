@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "autoname": "field:web_form_id",
+ "naming_rule": "By fieldname",
+ "creation": "2026-06-23 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "web_form_id",
+  "bank_connection",
+  "finapi_user",
+  "form_type",
+  "status",
+  "column_break_wf",
+  "url",
+  "expires_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "web_form_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "WebForm ID",
+   "reqd": 1,
+   "unique": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "bank_connection",
+   "fieldtype": "Link",
+   "label": "Bank Connection",
+   "options": "finAPI Bank Connection"
+  },
+  {
+   "fieldname": "finapi_user",
+   "fieldtype": "Link",
+   "label": "finAPI User",
+   "options": "finAPI User"
+  },
+  {
+   "default": "Import",
+   "fieldname": "form_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Import\nUpdate"
+  },
+  {
+   "default": "NOT_YET_OPENED",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "NOT_YET_OPENED\nIN_PROGRESS\nCOMPLETED\nCOMPLETED_WITH_ERROR\nABORTED\nEXPIRED"
+  },
+  {
+   "fieldname": "column_break_wf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Small Text",
+   "label": "WebForm URL",
+   "read_only": 1,
+   "description": "finAPI-hosted SCA URL. Valid for ~20 minutes."
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-23 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext finAPI",
+ "name": "finAPI Web Form",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

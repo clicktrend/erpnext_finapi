@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    name: Lint & validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff (lint)
+        run: ruff check .
+
+      - name: Ruff (format check)
+        run: ruff format --check .
+
+      - name: Validate DocType JSON
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          bad = 0
+          for p in pathlib.Path(".").rglob("*.json"):
+              try:
+                  json.loads(p.read_text())
+              except Exception as e:  # noqa: BLE001
+                  print(f"INVALID JSON: {p}: {e}")
+                  bad = 1
+          sys.exit(bad)
+          PY
+
+      - name: Compile Python
+        run: python -m compileall -q erpnext_finapi
