@@ -46,13 +46,15 @@ register a sync engine **via hooks**, the framework calls "give me transactions 
 `Bank Transaction`", and the user gets **one** native sync button. This is the ideal docking point
 for this app.
 
-- ⬜ **Watch** the v16 unified bank-feed hook contract (provider registration API). *Not public yet.*
+- ⬜ **Watch** the v16 unified bank-feed hook contract (provider registration API). *Not public yet —
+  not present in our ERPNext 16.14 build; rolling out across v16 point releases.*
 - ⬜ Register `erpnext_finapi` as a `finapi` bank-feed provider via that hook (keep our own
-  scheduler/sync as the v15 fallback). Our `FinApiClient` is already provider-shaped, so this
+  scheduler/sync as the fallback). Our `FinApiClient` is already provider-shaped, so this
   should be a thin adapter — **design Phase 2 sync to make this trivial.**
 
-> Until then: MVP on v15 writes native `Bank Transaction`s directly (own sync button + scheduler)
-> and reconciles with the native Bank Reconciliation Tool / Mint.
+> We already run on **v16** (Frappe 16.15 / ERPNext 16.14). Today the sync writes native
+> `Bank Transaction`s directly (own sync button + scheduler) and reconciles with the native Bank
+> Reconciliation Tool; once the unified bank-feed hook lands in v16 we register as a provider.
 
 ## Phase 6 — Optional / later
 

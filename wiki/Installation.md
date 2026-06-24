@@ -2,9 +2,9 @@
 
 ## Requirements
 
-- [Frappe](https://github.com/frappe/frappe) **v15+**
-- [ERPNext](https://github.com/frappe/erpnext) **v15+** — provides `Bank`, `Bank Account`,
-  `Bank Transaction` and the Bank Reconciliation Tool that this app feeds
+- [Frappe](https://github.com/frappe/frappe) **v15+** (developed and tested on **v16**)
+- [ERPNext](https://github.com/frappe/erpnext) **v15+** (developed and tested on **v16**) — provides
+  `Bank`, `Bank Account`, `Bank Transaction` and the Bank Reconciliation Tool that this app feeds
 - A finAPI Access account ([sandbox is free](https://finapi.io/))
 
 ## Install into a bench + site

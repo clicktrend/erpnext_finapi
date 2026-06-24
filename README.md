@@ -59,8 +59,8 @@ The well-known [ALYF Banking](https://github.com/alyf-de/banking) app is excelle
 
 ## Requirements
 
-- [Frappe](https://github.com/frappe/frappe) v15+
-- [ERPNext](https://github.com/frappe/erpnext) v15+ (provides `Bank`, `Bank Account`, `Bank Transaction`, Bank Reconciliation Tool)
+- [Frappe](https://github.com/frappe/frappe) v15+ — **developed and tested on v16**
+- [ERPNext](https://github.com/frappe/erpnext) v15+ — **developed and tested on v16** (provides `Bank`, `Bank Account`, `Bank Transaction`, Bank Reconciliation Tool)
 - A finAPI Access account — [sandbox is free](https://finapi.io/), live needs a contract
 
 ## Installation
