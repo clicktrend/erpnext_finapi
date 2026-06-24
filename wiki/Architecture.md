@@ -74,3 +74,17 @@ alternative — you pay finAPI directly (sandbox free), and there is no middlema
 
 > Concept/background (German): `docs/plans/2026-06-23-erpnext-finapi-banking-app.md` in the parent
 > project.
+
+## Forward: ERPNext v16 unified bank-feed interface
+
+ERPNext **v16** merges [Mint](https://github.com/The-Commit-Company/mint) as the default banking
+module (consolidated reconciliation, rules, a heuristic CSV/Excel statement importer) and is adding
+a **unified bank-feed integration interface**: a provider registers a sync engine **via hooks**, the
+framework asks it for transactions and maps them to `Bank Transaction`, and the user gets **one**
+native sync button (Plaid, finAPI, regional banks all behind the same button).
+
+That is the ideal home for this app. `FinApiClient` is already provider-shaped (call API → get
+transactions → map), so the sync layer is kept deliberately thin: today it writes `Bank Transaction`
+directly (v15), and when the v16 hook contract is published it registers as a `finapi` provider with
+a small adapter. The Mint merge also reinforces the core rule here — **we never reimplement
+reconciliation**; we only supply the feed. See [Roadmap](Roadmap) Phase 5.

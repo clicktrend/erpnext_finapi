@@ -38,7 +38,23 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 - ⬜ Frappe Cloud Marketplace listing / GitHub release
 - ⬜ Translations (DE/EN)
 
-## Phase 5 — Optional / later
+## Phase 5 — v16 unified bank-feed interface (align when public)
+
+ERPNext v16 merges [Mint](https://github.com/The-Commit-Company/mint) as the default banking
+module and is adding a **unified bank-feed integration interface**: providers (Plaid, finAPI, …)
+register a sync engine **via hooks**, the framework calls "give me transactions → map to
+`Bank Transaction`", and the user gets **one** native sync button. This is the ideal docking point
+for this app.
+
+- ⬜ **Watch** the v16 unified bank-feed hook contract (provider registration API). *Not public yet.*
+- ⬜ Register `erpnext_finapi` as a `finapi` bank-feed provider via that hook (keep our own
+  scheduler/sync as the v15 fallback). Our `FinApiClient` is already provider-shaped, so this
+  should be a thin adapter — **design Phase 2 sync to make this trivial.**
+
+> Until then: MVP on v15 writes native `Bank Transaction`s directly (own sync button + scheduler)
+> and reconciles with the native Bank Reconciliation Tool / Mint.
+
+## Phase 6 — Optional / later
 
 - ⬜ Second provider layer: **EBICS** (no 90-day re-consent) behind the same client abstraction
 - ⬜ Payment Initiation (PIS) → confirm outbound `Payment Entry` (touches the gateway side; separate)
