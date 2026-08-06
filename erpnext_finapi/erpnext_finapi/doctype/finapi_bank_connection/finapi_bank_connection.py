@@ -153,8 +153,12 @@ def cancel_sca(connection: str) -> dict:
 
 
 @frappe.whitelist()
-def refresh_accounts(connection: str) -> dict:
-	"""Re-read the accounts of this connection and re-try the Bank Account linking."""
+def refresh_accounts(connection: str, include_removed: int = 0) -> dict:
+	"""Re-read the accounts of this connection and re-try the Bank Account linking.
+
+	Accounts you deleted from the table stay deleted — pass ``include_removed`` to pull
+	them back in.
+	"""
 	doc = frappe.get_doc("finAPI Bank Connection", connection)
 	doc.check_permission("write")
 
@@ -162,7 +166,9 @@ def refresh_accounts(connection: str) -> dict:
 		frappe.throw(_("This connection has not been imported yet."))
 
 	client, token = get_user_session(doc.finapi_user)
-	linked = sca_flow.map_accounts(doc, client=client, token=token)
+	linked = sca_flow.map_accounts(
+		doc, client=client, token=token, include_removed=bool(int(include_removed))
+	)
 	doc.save()
 
 	return {"accounts": len(doc.accounts or []), "bank_accounts_linked": linked}

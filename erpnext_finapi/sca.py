@@ -19,6 +19,8 @@ to the database (PSD2-sensitive).
 
 from __future__ import annotations
 
+import json
+
 import frappe
 from frappe import _
 from frappe.utils import add_days, get_datetime, now_datetime
@@ -230,7 +232,7 @@ def consent_expiry(payload: dict):
 	return add_days(now_datetime(), DEFAULT_CONSENT_DAYS)
 
 
-def map_accounts(doc, *, client, token: str) -> int:
+def map_accounts(doc, *, client, token: str, include_removed: bool = False) -> int:
 	"""Refresh the account child table from finAPI and link native Bank Accounts.
 
 	Linking is by IBAN against existing ``Bank Account`` records — we deliberately do
@@ -245,11 +247,21 @@ def map_accounts(doc, *, client, token: str) -> int:
 	]
 
 	existing = {str(row.finapi_account_id): row for row in (doc.accounts or [])}
+	known = _known_account_ids(doc)
 	linked = 0
 
 	for account in accounts:
 		account_id = str(account.get("id"))
-		row = existing.get(account_id) or doc.append("accounts", {"finapi_account_id": account_id})
+		row = existing.get(account_id)
+
+		if row is None:
+			# A row the user deleted must stay deleted. Private accounts have no business
+			# in the company ledger, and silently resurrecting them on the next refresh
+			# would undo that decision over and over. Accounts we have never seen are
+			# genuinely new and do get added.
+			if account_id in known and not include_removed:
+				continue
+			row = doc.append("accounts", {"finapi_account_id": account_id})
 
 		row.account_name = account.get("accountName") or account.get("accountHolderName")
 		# Banks love to name every account the same thing ("Sichteinlagen"), so the holder
@@ -266,7 +278,15 @@ def map_accounts(doc, *, client, token: str) -> int:
 			linked += 1
 			stamp_integration_id(row.bank_account, account_id)
 
+	doc.known_account_ids = json.dumps(sorted(known | {str(a.get("id")) for a in accounts}))
 	return linked
+
+
+def _known_account_ids(doc) -> set[str]:
+	try:
+		return {str(i) for i in json.loads(doc.known_account_ids or "[]")}
+	except (TypeError, ValueError):
+		return set()
 
 
 def _account_type(account: dict) -> str | None:
