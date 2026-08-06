@@ -23,7 +23,8 @@
   "last_sync",
   "last_error",
   "section_accounts",
-  "accounts"
+  "accounts",
+  "known_account_ids"
  ],
  "fields": [
   {
@@ -133,7 +134,16 @@
    "fieldname": "accounts",
    "fieldtype": "Table",
    "label": "Accounts",
-   "options": "finAPI Bank Connection Account"
+   "options": "finAPI Bank Connection Account",
+   "description": "Delete a row to keep an account out of ERPNext (private accounts, for example) — it will not come back on the next refresh."
+  },
+  {
+   "fieldname": "known_account_ids",
+   "fieldtype": "Small Text",
+   "label": "Known finAPI Accounts",
+   "read_only": 1,
+   "collapsible": 1,
+   "description": "Every account this connection has ever reported. Accounts listed here but missing from the table above were removed on purpose and are not re-added; genuinely new accounts still appear."
   }
  ],
  "links": [],

@@ -28,6 +28,15 @@ frappe.ui.form.on("finAPI Bank Connection", {
 				start_sca(frm, "start_update")
 			);
 			frm.add_custom_button(__("Refresh Accounts"), () => refresh_accounts(frm), __("Setup"));
+			frm.add_custom_button(
+				__("Re-add Removed Accounts"),
+				() =>
+					frappe.confirm(
+						__("Pull back every account of this connection, including the ones you deleted?"),
+						() => refresh_accounts(frm, 1)
+					),
+				__("Setup")
+			);
 			frm.add_custom_button(__("Sync Now"), () => sync_now(frm)).addClass("btn-primary");
 		}
 
@@ -338,10 +347,10 @@ function enter_challenge(frm, state) {
 // Accounts & sync
 // --------------------------------------------------------------------------- //
 
-function refresh_accounts(frm) {
+function refresh_accounts(frm, include_removed = 0) {
 	frappe.call({
 		method: METHOD + "refresh_accounts",
-		args: { connection: frm.doc.name },
+		args: { connection: frm.doc.name, include_removed },
 		freeze: true,
 		callback: (r) => {
 			const res = r.message || {};
