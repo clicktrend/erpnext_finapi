@@ -252,6 +252,9 @@ def map_accounts(doc, *, client, token: str) -> int:
 		row = existing.get(account_id) or doc.append("accounts", {"finapi_account_id": account_id})
 
 		row.account_name = account.get("accountName") or account.get("accountHolderName")
+		# Banks love to name every account the same thing ("Sichteinlagen"), so the holder
+		# is often the only clue which legal entity — which ERPNext Company — owns it.
+		row.account_holder = account.get("accountHolderName")
 		row.iban = account.get("iban")
 		row.account_type = _account_type(account)
 		row.currency = account.get("accountCurrency") or row.currency
@@ -288,6 +291,37 @@ def find_bank_account_by_iban(iban: str | None) -> str | None:
 		if normalize_iban(row.iban) == wanted:
 			return row.name
 	return None
+
+
+def backfill_iban(bank_account: str, iban: str | None) -> None:
+	"""Write the bank's IBAN onto a native ``Bank Account`` that has none.
+
+	ERPNext Bank Accounts are routinely created without an IBAN, which is exactly why
+	the automatic account match finds nothing and the first mapping has to be done by
+	hand. Storing what the bank reported makes the record complete (ERPNext uses it for
+	SEPA too) and lets every future account match itself.
+
+	An IBAN that is already set is never overwritten — a mismatch means the mapping is
+	wrong, and silently "fixing" the ledger's idea of the account would hide that.
+	"""
+	iban = normalize_iban(iban)
+	if not iban:
+		return
+
+	current = normalize_iban(frappe.db.get_value("Bank Account", bank_account, "iban"))
+	if not current:
+		frappe.db.set_value("Bank Account", bank_account, "iban", iban)
+		return
+
+	if current != iban:
+		frappe.msgprint(
+			_(
+				"Bank Account {0} has IBAN {1}, but the linked finAPI account is {2}. "
+				"Please check the mapping — nothing was changed."
+			).format(bank_account, current, iban),
+			indicator="red",
+			title=_("IBAN mismatch"),
+		)
 
 
 def stamp_integration_id(bank_account: str, finapi_account_id: str) -> None:

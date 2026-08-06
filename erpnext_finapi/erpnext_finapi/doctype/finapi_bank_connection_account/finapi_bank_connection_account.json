@@ -8,6 +8,7 @@
  "field_order": [
   "finapi_account_id",
   "account_name",
+  "account_holder",
   "iban",
   "account_type",
   "currency",
@@ -28,6 +29,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Account Name"
+  },
+  {
+   "columns": 2,
+   "fieldname": "account_holder",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Account Holder",
+   "read_only": 1,
+   "description": "As reported by the bank — usually the only field that says which legal entity owns the account."
   },
   {
    "columns": 2,

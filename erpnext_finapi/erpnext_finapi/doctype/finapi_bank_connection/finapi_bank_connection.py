@@ -21,12 +21,15 @@ class finAPIBankConnection(Document):
 	"""
 
 	def on_update(self):
-		# Accounts are often linked by hand (an ERPNext Bank Account frequently has no
-		# IBAN stored, so the automatic match finds nothing). Mirror the finAPI account
-		# id onto the native integration_id here too, not just on automatic linking.
+		# Accounts usually get linked by hand the first time: an ERPNext Bank Account
+		# frequently has no IBAN stored, so the automatic IBAN match finds nothing.
+		# Close that loop here — write back what the bank told us, so the mapping is a
+		# one-off and every later account matches by itself.
 		for row in self.accounts or []:
-			if row.bank_account and row.finapi_account_id:
-				sca_flow.stamp_integration_id(row.bank_account, str(row.finapi_account_id))
+			if not (row.bank_account and row.finapi_account_id):
+				continue
+			sca_flow.stamp_integration_id(row.bank_account, str(row.finapi_account_id))
+			sca_flow.backfill_iban(row.bank_account, row.iban)
 
 	def on_trash(self):
 		# Never leave in-flight login credentials behind in the cache.
