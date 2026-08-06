@@ -373,3 +373,54 @@ class TestBankSearchTerm(unittest.TestCase):
 		client.search_banks("DE02120300000000202051", token=token)
 
 		self.assertEqual(session.last["params"]["search"], "44160014")
+
+
+PSU_HEADERS = {
+	"PSU-IP-Address": "203.0.113.7",
+	"PSU-User-Agent": "Mozilla/5.0",
+	"PSU-Device-OS": "Linux",
+}
+
+
+class TestPsuMetadata(unittest.TestCase):
+	"""PSD2's 4-per-day cap applies to UNATTENDED updates, and "unattended" is declared,
+	not detected: the bank goes by whether the PSU headers are present."""
+
+	def test_update_forwards_psu_headers_when_a_user_is_present(self):
+		client, session = make_client([TOKEN_RESPONSE, FakeResponse(200, {})])
+		token = client.authenticate_default_client()
+
+		client.update_bank_connection(token=token, bank_connection_id=1, psu_headers=PSU_HEADERS)
+
+		headers = session.last["headers"]
+		self.assertEqual(headers["PSU-IP-Address"], "203.0.113.7")
+		self.assertEqual(headers["PSU-Device-OS"], "Linux")
+		self.assertEqual(headers["Authorization"], "Bearer tok-123")
+
+	def test_scheduled_update_sends_no_psu_headers(self):
+		# Claiming a human from a cron would be a lie to the bank.
+		client, session = make_client([TOKEN_RESPONSE, FakeResponse(200, {})])
+		token = client.authenticate_default_client()
+
+		client.update_bank_connection(token=token, bank_connection_id=1)
+
+		self.assertNotIn("PSU-IP-Address", session.last["headers"])
+
+	def test_empty_values_are_not_sent(self):
+		client, session = make_client([TOKEN_RESPONSE, FakeResponse(200, {})])
+		token = client.authenticate_default_client()
+
+		client.update_bank_connection(
+			token=token, bank_connection_id=1, psu_headers={"PSU-IP-Address": "", "PSU-Device-OS": "Linux"}
+		)
+
+		self.assertNotIn("PSU-IP-Address", session.last["headers"])
+		self.assertIn("PSU-Device-OS", session.last["headers"])
+
+	def test_import_forwards_psu_headers_too(self):
+		client, session = make_client([TOKEN_RESPONSE, FakeResponse(201, {"id": 1})])
+		token = client.authenticate_default_client()
+
+		client.import_bank_connection(token=token, bank_id=1, psu_headers=PSU_HEADERS)
+
+		self.assertEqual(session.last["headers"]["PSU-IP-Address"], "203.0.113.7")

@@ -10,7 +10,7 @@ from frappe.model.document import Document
 from erpnext_finapi import sca as sca_flow
 from erpnext_finapi import sync as sync_engine
 from erpnext_finapi.finapi import constants as c
-from erpnext_finapi.session import get_user_session
+from erpnext_finapi.session import get_user_session, psu_headers
 
 
 class finAPIBankConnection(Document):
@@ -186,6 +186,10 @@ def sync_now(connection: str, update_bank: int = 1) -> str:
 		timeout=1500,
 		connection=connection,
 		update_bank=bool(int(update_bank)),
+		# Captured HERE, in the web request: the worker has no request to read it from,
+		# and this is what tells the bank a person asked — lifting the PSD2 cap of 4
+		# unattended updates per day that the scheduled runs have to live within.
+		psu_headers=psu_headers(),
 	)
 	return _("Sync queued — the result appears as a finAPI Sync Log when it finishes.")
 
@@ -194,4 +198,6 @@ def sync_now(connection: str, update_bank: int = 1) -> str:
 def sync_now_foreground(connection: str, update_bank: int = 1) -> dict:
 	"""Synchronous variant for the console and tests (bypasses the worker)."""
 	frappe.get_doc("finAPI Bank Connection", connection).check_permission("write")
-	return sync_engine.sync_connection(connection, update_bank=bool(int(update_bank)))
+	return sync_engine.sync_connection(
+		connection, update_bank=bool(int(update_bank)), psu_headers=psu_headers()
+	)

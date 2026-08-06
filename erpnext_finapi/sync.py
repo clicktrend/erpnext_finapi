@@ -59,8 +59,12 @@ def sync_all_connections(update_bank: bool = True) -> list[dict]:
 	return results
 
 
-def sync_connection(connection: str, *, update_bank: bool = True) -> dict:
-	"""Run both stages for one connection and write a ``finAPI Sync Log``."""
+def sync_connection(connection: str, *, update_bank: bool = True, psu_headers: dict | None = None) -> dict:
+	"""Run both stages for one connection and write a ``finAPI Sync Log``.
+
+	``psu_headers`` declares to the bank that a person triggered this run, which lifts
+	the PSD2 cap of 4 unattended updates per 24h. Scheduled runs must leave it unset.
+	"""
 	doc = frappe.get_doc("finAPI Bank Connection", connection)
 	settings = frappe.get_single("finAPI Settings")
 
@@ -73,7 +77,7 @@ def sync_connection(connection: str, *, update_bank: bool = True) -> dict:
 
 		updated = False
 		if update_bank and doc.finapi_connection_id:
-			updated = _update_bank_connection(doc, client=client, token=token)
+			updated = _update_bank_connection(doc, client=client, token=token, psu_headers=psu_headers)
 
 		if updated:
 			# finAPI stores freshly fetched transactions slightly asynchronously; reading
@@ -116,7 +120,7 @@ def sync_connection(connection: str, *, update_bank: bool = True) -> dict:
 # --------------------------------------------------------------------------- #
 
 
-def _update_bank_connection(doc, *, client, token: str) -> bool:
+def _update_bank_connection(doc, *, client, token: str, psu_headers: dict | None = None) -> bool:
 	"""Trigger an unattended update. Returns whether fresh data was fetched.
 
 	Inside the 90-day consent window finAPI replays the stored secrets and no human is
@@ -128,6 +132,7 @@ def _update_bank_connection(doc, *, client, token: str) -> bool:
 			token=token,
 			bank_connection_id=doc.finapi_connection_id,
 			interface=doc.interface or c.INTERFACE_XS2A,
+			psu_headers=psu_headers,
 		)
 		if doc.status != "Connected":
 			doc.db_set("status", "Connected", update_modified=False)
