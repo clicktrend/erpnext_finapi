@@ -44,3 +44,50 @@ def get_user_session(finapi_user: str) -> tuple[FinApiClient, str]:
 	client = get_client()
 	token = client.authenticate_user(user.finapi_username, password)
 	return client, token
+
+
+# Berlin Group / PSD2 metadata. Their PRESENCE is what tells the bank a human is
+# waiting for the answer — the bank cannot detect it, and finAPI forwards exactly
+# these three headers.
+PSU_IP_ADDRESS = "PSU-IP-Address"
+PSU_USER_AGENT = "PSU-User-Agent"
+PSU_DEVICE_OS = "PSU-Device-OS"
+
+_OS_MARKERS = (
+	("Windows", "Windows"),
+	("Macintosh", "macOS"),
+	("Mac OS", "macOS"),
+	("Android", "Android"),
+	("iPhone", "iOS"),
+	("iPad", "iOS"),
+	("Linux", "Linux"),
+)
+
+
+def psu_headers() -> dict | None:
+	"""PSU metadata for the request currently being served — ``None`` in background jobs.
+
+	PSD2 caps *unattended* bank updates at 4 per 24h and connection, but leaves
+	user-triggered ones unlimited. The bank does not work out which is which: sending
+	these headers is the declaration that a person asked for it.
+
+	So this deliberately returns ``None`` whenever there is no HTTP request behind the
+	call — a scheduled run must not claim a human. Callers that want the headers in a
+	background job have to capture them in the web request and hand them over.
+	"""
+	request = getattr(frappe.local, "request", None)
+	if not request:
+		return None
+
+	ip = getattr(frappe.local, "request_ip", None)
+	if not ip:
+		return None
+
+	user_agent = request.headers.get("User-Agent") or ""
+	device_os = next((name for marker, name in _OS_MARKERS if marker in user_agent), "unknown")
+
+	return {
+		PSU_IP_ADDRESS: ip,
+		PSU_USER_AGENT: user_agent[:200] or "unknown",
+		PSU_DEVICE_OS: device_os,
+	}

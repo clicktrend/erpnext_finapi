@@ -94,6 +94,7 @@ class FinApiClient:
 		params: dict | None = None,
 		host: str | None = None,
 		expect_sca: bool = False,
+		psu_headers: dict | None = None,
 	) -> dict:
 		"""Perform a request and return the parsed JSON body.
 
@@ -104,6 +105,8 @@ class FinApiClient:
 		headers = {"Accept": "application/json"}
 		if token:
 			headers["Authorization"] = f"Bearer {token}"
+		if psu_headers:
+			headers.update({k: v for k, v in psu_headers.items() if v})
 
 		resp = self._session.request(
 			method,
@@ -298,6 +301,7 @@ class FinApiClient:
 		multi_step: dict | None = None,
 		account_types: list[str] | None = None,
 		store_secrets: bool = True,
+		psu_headers: dict | None = None,
 	) -> dict:
 		"""Import a bank connection, handling the stateful 510 SCA flow.
 
@@ -331,6 +335,7 @@ class FinApiClient:
 			token=token,
 			json=payload,
 			expect_sca=True,
+			psu_headers=psu_headers,
 		)
 
 	def update_bank_connection(
@@ -342,6 +347,7 @@ class FinApiClient:
 		login_credentials: list[dict] | None = None,
 		multi_step: dict | None = None,
 		store_secrets: bool = True,
+		psu_headers: dict | None = None,
 	) -> dict:
 		"""Make finAPI fetch fresh data FROM the bank — **stage one** of every sync.
 
@@ -353,6 +359,13 @@ class FinApiClient:
 		replays the stored secrets). If the bank demands SCA anyway, a
 		:class:`ScaChallengeRequired` is raised — a scheduler cannot answer a TAN, so
 		callers should mark the connection as needing a manual update and move on.
+
+		⚠️ **``psu_headers`` decides whether this counts against the PSD2 quota.** The
+		bank does not detect whether a human triggered the call — it is declared, by
+		the presence of the PSU metadata headers (see :func:`psu_headers`). Send them
+		when a user is waiting for the result (unlimited), omit them in scheduled runs
+		(capped at 4 per 24h and connection). Sending them from a cron would be a lie
+		to the bank.
 
 		⚠️ The field is ``bankingInterface`` — same as the import. finAPI's prose docs
 		say ``interface``; sending that makes finAPI reject the whole body with
@@ -374,6 +387,7 @@ class FinApiClient:
 			token=token,
 			json=payload,
 			expect_sca=True,
+			psu_headers=psu_headers,
 		)
 
 	def get_bank_connections(self, *, token: str) -> list[dict]:

@@ -27,7 +27,7 @@ from frappe.utils import add_days, get_datetime, now_datetime
 
 from erpnext_finapi.finapi import constants as c
 from erpnext_finapi.finapi.exceptions import ScaChallengeRequired
-from erpnext_finapi.session import get_user_session
+from erpnext_finapi.session import get_user_session, psu_headers
 
 # How long an unfinished SCA flow may sit in the cache. TANs expire quickly anyway.
 SESSION_TTL_SECONDS = 15 * 60
@@ -133,6 +133,7 @@ def _send(connection: str, session: dict) -> dict:
 				interface=session["interface"],
 				login_credentials=session.get("login_credentials") or None,
 				multi_step=session.get("multi_step"),
+				psu_headers=psu_headers(),
 			)
 		else:
 			payload = client.import_bank_connection(
