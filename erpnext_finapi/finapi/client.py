@@ -141,12 +141,23 @@ class FinApiClient:
 
 	@staticmethod
 	def _raise_sca(body: dict) -> None:
-		"""Turn a 510 body into a :class:`ScaChallengeRequired`."""
-		multi_step = (body or {}).get("multiStepAuthentication") or {}
+		"""Turn a 510 body into a :class:`ScaChallengeRequired`.
+
+		⚠️ finAPI nests the ``multiStepAuthentication`` object inside ``errors[0]``
+		(verified against the live mandator). A top-level variant is tolerated so a
+		future API change does not silently turn every SCA step into a hard error.
+		"""
+		body = body or {}
+		errors = body.get("errors")
+		first_error = errors[0] if isinstance(errors, list) and errors and isinstance(errors[0], dict) else {}
+
+		multi_step = first_error.get("multiStepAuthentication") or body.get("multiStepAuthentication") or {}
+
 		raise ScaChallengeRequired(
 			"Strong Customer Authentication required",
 			multi_step=multi_step,
-			two_step_procedures=(body or {}).get("twoStepProcedures") or [],
+			# The procedure list lives inside multiStepAuthentication; older shapes put it on top.
+			two_step_procedures=multi_step.get("twoStepProcedures") or body.get("twoStepProcedures") or [],
 			challenge_message=multi_step.get("challengeMessage"),
 			response_body=body,
 		)
@@ -232,14 +243,24 @@ class FinApiClient:
 	# Banks (user or data token)
 	# ------------------------------------------------------------------ #
 
-	def search_banks(self, search: str, *, token: str, page: int = 1, per_page: int = 20) -> dict:
-		"""Search banks by name/BLZ/BIC."""
-		return self._request(
-			"GET",
-			c.EP_BANKS,
-			token=token,
-			params={"search": search, "page": page, "perPage": per_page},
-		)
+	def search_banks(
+		self,
+		search: str,
+		*,
+		token: str,
+		page: int = 1,
+		per_page: int = 20,
+		is_test_bank: bool | None = None,
+	) -> dict:
+		"""Search banks by name/BLZ/BIC.
+
+		⚠️ Needs a USER token — a client token returns 403 UNAUTHORIZED_ACCESS.
+		``is_test_bank`` filters finAPI's fake banks (wanted in Sandbox, noise in Live).
+		"""
+		params: dict = {"search": search, "page": page, "perPage": per_page}
+		if is_test_bank is not None:
+			params["isTestBank"] = "true" if is_test_bank else "false"
+		return self._request("GET", c.EP_BANKS, token=token, params=params)
 
 	def get_bank(self, bank_id: int | str, *, token: str) -> dict:
 		return self._request("GET", f"{c.EP_BANKS}/{bank_id}", token=token)
@@ -257,6 +278,7 @@ class FinApiClient:
 		login_credentials: list[dict] | None = None,
 		multi_step: dict | None = None,
 		account_types: list[str] | None = None,
+		store_secrets: bool = True,
 	) -> dict:
 		"""Import a bank connection, handling the stateful 510 SCA flow.
 
@@ -265,12 +287,17 @@ class FinApiClient:
 		``multi_step`` (plus the user's procedure choice / TAN) into the next call.
 		Returns the created bank connection on success (HTTP 2xx).
 
+		``store_secrets`` lets finAPI keep the login credentials so later *unattended*
+		updates (the scheduled sync's stage one) work without a human — without it the
+		scheduler can never refresh the connection.
+
 		⚠️ The full body — including ``login_credentials`` — must be re-sent on every
 		step. Keep credentials server-side and transient (PSD2-sensitive).
 		"""
 		payload: dict = {
 			"bankId": bank_id,
 			"bankingInterface": interface,
+			"storeSecrets": store_secrets,
 		}
 		if login_credentials:
 			payload["loginCredentials"] = login_credentials
@@ -286,6 +313,67 @@ class FinApiClient:
 			json=payload,
 			expect_sca=True,
 		)
+
+	def update_bank_connection(
+		self,
+		*,
+		token: str,
+		bank_connection_id: int | str,
+		interface: str = c.INTERFACE_XS2A,
+		login_credentials: list[dict] | None = None,
+		multi_step: dict | None = None,
+		store_secrets: bool = True,
+	) -> dict:
+		"""Make finAPI fetch fresh data FROM the bank — **stage one** of every sync.
+
+		``get_transactions`` only reads finAPI's own store; it never triggers a bank
+		fetch. Skipping this call leaves the data frozen on the snapshot taken at
+		import time, and the sync reports "nothing new" forever.
+
+		Within the 90-day consent window this usually succeeds *unattended* (finAPI
+		replays the stored secrets). If the bank demands SCA anyway, a
+		:class:`ScaChallengeRequired` is raised — a scheduler cannot answer a TAN, so
+		callers should mark the connection as needing a manual update and move on.
+
+		⚠️ The field is ``bankingInterface`` — same as the import. finAPI's prose docs
+		say ``interface``; sending that makes finAPI reject the whole body with
+		"request contains no data / invalid JSON" (a 400 masquerading as an encoding bug).
+		"""
+		payload: dict = {
+			"bankConnectionId": bank_connection_id,
+			"bankingInterface": interface,
+			"storeSecrets": store_secrets,
+		}
+		if login_credentials:
+			payload["loginCredentials"] = login_credentials
+		if multi_step:
+			payload["multiStepAuthentication"] = multi_step
+
+		return self._request(
+			"POST",
+			c.EP_BANK_CONNECTIONS_UPDATE,
+			token=token,
+			json=payload,
+			expect_sca=True,
+		)
+
+	def get_bank_connections(self, *, token: str) -> list[dict]:
+		"""All bank connections of the authenticated finAPI user."""
+		body = self._request("GET", c.EP_BANK_CONNECTIONS, token=token)
+		return body.get("connections") or []
+
+	def get_bank_connection(self, bank_connection_id: int | str, *, token: str) -> dict:
+		return self._request("GET", f"{c.EP_BANK_CONNECTIONS}/{bank_connection_id}", token=token)
+
+	# ------------------------------------------------------------------ #
+	# Accounts
+	# ------------------------------------------------------------------ #
+
+	def get_accounts(self, *, token: str, ids: list[int] | None = None) -> list[dict]:
+		"""All accounts of the authenticated user (optionally filtered by finAPI id)."""
+		params = {"ids": ",".join(str(i) for i in ids)} if ids else None
+		body = self._request("GET", c.EP_ACCOUNTS, token=token, params=params)
+		return body.get("accounts") or []
 
 	# ------------------------------------------------------------------ #
 	# WebForm 2.0
@@ -330,19 +418,68 @@ class FinApiClient:
 	# Transactions
 	# ------------------------------------------------------------------ #
 
+	def get_transactions_page(
+		self,
+		*,
+		token: str,
+		account_ids: list[int] | None = None,
+		min_import_date: str | None = None,
+		min_bank_booking_date: str | None = None,
+		page: int = 1,
+		per_page: int = c.MAX_PER_PAGE,
+		view: str = c.TX_VIEW_USER,
+	) -> dict:
+		"""One page of transactions — the raw body incl. ``paging``.
+
+		``min_import_date`` filters on when *finAPI* imported the transaction, which is
+		the right incremental cursor: a transaction the bank booked days ago but
+		delivered today still shows up. ``min_bank_booking_date`` filters on the bank's
+		booking date instead. Both are ``YYYY-MM-DD``.
+		"""
+		params: dict = {"page": page, "perPage": min(per_page, c.MAX_PER_PAGE), "view": view}
+		if account_ids:
+			params["accountIds"] = ",".join(str(a) for a in account_ids)
+		if min_import_date:
+			params["minImportDate"] = min_import_date
+		if min_bank_booking_date:
+			params["minBankBookingDate"] = min_bank_booking_date
+		return self._request("GET", c.EP_TRANSACTIONS, token=token, params=params)
+
 	def get_transactions(
 		self,
 		*,
 		token: str,
 		account_ids: list[int] | None = None,
+		min_import_date: str | None = None,
 		min_bank_booking_date: str | None = None,
-		page: int = 1,
-		per_page: int = 500,
-	) -> dict:
-		"""Fetch transactions (paged). ``min_bank_booking_date`` is ``YYYY-MM-DD``."""
-		params: dict = {"page": page, "perPage": per_page}
-		if account_ids:
-			params["accountIds"] = ",".join(str(a) for a in account_ids)
-		if min_bank_booking_date:
-			params["minBankBookingDate"] = min_bank_booking_date
-		return self._request("GET", c.EP_TRANSACTIONS, token=token, params=params)
+		per_page: int = c.MAX_PER_PAGE,
+		view: str = c.TX_VIEW_USER,
+		max_pages: int = 100,
+	) -> list[dict]:
+		"""ALL matching transactions, following finAPI's paging.
+
+		⚠️ finAPI clamps ``perPage`` at 500, so reading page 1 only is a silent cap —
+		on a busy account that quietly loses transactions. ``max_pages`` is a runaway
+		guard, not a business limit.
+		"""
+		transactions: list[dict] = []
+		page = 1
+		while page <= max_pages:
+			body = self.get_transactions_page(
+				token=token,
+				account_ids=account_ids,
+				min_import_date=min_import_date,
+				min_bank_booking_date=min_bank_booking_date,
+				page=page,
+				per_page=per_page,
+				view=view,
+			)
+			batch = body.get("transactions") or []
+			transactions.extend(batch)
+
+			page_count = int((body.get("paging") or {}).get("pageCount") or 1)
+			if page >= page_count or not batch:
+				break
+			page += 1
+
+		return transactions

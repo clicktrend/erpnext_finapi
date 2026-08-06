@@ -42,3 +42,21 @@ jobs:
 
       - name: Compile Python
         run: python -m compileall -q erpnext_finapi
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # The finapi client library and the transaction mapping are deliberately
+      # Frappe-free, so they run without a site or a database.
+      - name: Install test dependencies
+        run: pip install requests
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v

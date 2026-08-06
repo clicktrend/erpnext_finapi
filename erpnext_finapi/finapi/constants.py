@@ -43,7 +43,10 @@ def webform_host(environment: str) -> str:
 EP_TOKEN = "/api/v2/oauth/token"
 EP_USERS = "/api/v2/users"
 EP_BANKS = "/api/v2/banks"
+EP_BANK_CONNECTIONS = "/api/v2/bankConnections"
 EP_BANK_CONNECTIONS_IMPORT = "/api/v2/bankConnections/import"
+EP_BANK_CONNECTIONS_UPDATE = "/api/v2/bankConnections/update"
+EP_ACCOUNTS = "/api/v2/accounts"
 EP_TRANSACTIONS = "/api/v2/transactions"
 EP_WEBFORM_BANK_IMPORT = "/api/webForms/bankConnectionImport"
 EP_WEBFORM = "/api/webForms/{web_form_id}"
@@ -83,6 +86,33 @@ WF_ABORTED = "ABORTED"
 WF_EXPIRED = "EXPIRED"
 
 WF_TERMINAL = (WF_COMPLETED, WF_COMPLETED_WITH_ERROR, WF_ABORTED, WF_EXPIRED)
+
+
+# --- Transactions -----------------------------------------------------------
+
+# finAPI's "userView" returns the transaction as the user sees it (no bank-internal
+# splitting). This is what the (verified) Marello importer used.
+TX_VIEW_USER = "userView"
+
+# finAPI caps a page at 500 entries. Anything above is silently clamped, so a
+# single-page read is NOT a complete read — always follow `paging.pageCount`.
+MAX_PER_PAGE = 500
+
+
+# --- PSD2 / two-stage sync --------------------------------------------------
+
+# ⚠️ Reading transactions is only stage TWO. finAPI does not poll the bank on its
+# own schedule for us: a bank connection must be UPDATED (stage one, finAPI ← bank)
+# or the read stays frozen on the last snapshot. This cost the predecessor system
+# months of "0 imported, N skipped" — see client.update_bank_connection().
+#
+# PSD2 caps *unattended* (PSU-absent) updates at 4 per 24h per connection. User-present
+# updates (someone clicking a button) are not capped.
+PSD2_UNATTENDED_UPDATES_PER_DAY = 4
+
+# finAPI downloads freshly fetched transactions slightly asynchronously — a read in
+# the same run otherwise misses them.
+POST_UPDATE_SETTLE_SECONDS = 15
 
 
 # --- HTTP ------------------------------------------------------------------
