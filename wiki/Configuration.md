@@ -1,5 +1,15 @@
 # Configuration
 
+## 0. Where to find everything
+
+Installing the app adds a **finAPI** tile to the Desk launcher (`/desk`) and a **finAPI
+workspace** (`/app/finapi`) with shortcuts to Settings, Bank Connections, finAPI Users, the Sync
+Log, and the native Bank Transactions / Bank Reconciliation Tool.
+
+Both are visible to **System Manager** and **Accounts Manager** only, and both are re-created on
+every `bench migrate` (Frappe builds app tiles on install only, so a migrated site would otherwise
+lose the tile).
+
 ## 1. finAPI Settings (single)
 
 Go to **finAPI Settings**. All credentials are stored in **encrypted** password fields — never

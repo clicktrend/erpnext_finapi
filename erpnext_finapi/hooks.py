@@ -8,6 +8,17 @@ app_license = "gpl-3.0"
 # This app extends ERPNext (Bank, Bank Account, Bank Transaction, Bank Reconciliation Tool).
 required_apps = ["erpnext"]
 
+# App tile on the /desk launcher, leading to the finAPI workspace.
+add_to_apps_screen = [
+	{
+		"name": "erpnext_finapi",
+		"logo": "/assets/erpnext_finapi/logo.svg",
+		"title": "ERPNext finAPI",
+		"route": "/app/finapi",
+		"has_permission": "erpnext_finapi.permissions.has_app_permission",
+	}
+]
+
 # Scheduled tasks
 # ---------------
 # Pull new bank transactions from finAPI into native Bank Transaction records.
@@ -27,11 +38,12 @@ scheduler_events = {
 	],
 }
 
-# Fixtures (custom fields / roles) — added in a later phase.
-# fixtures = []
-
 # Installation hooks
 # ------------------
-# after_install = "erpnext_finapi.setup.install.after_install"
+# The workspace and the /desk app tile are (re-)created on every migrate rather than
+# shipped as fixtures: Frappe creates app tiles only in after_app_install, so a site
+# that merely migrates would silently lose them.
+after_install = "erpnext_finapi.install.after_install"
+after_migrate = "erpnext_finapi.install.after_migrate"
 
 # Jinja / overrides / doc events are intentionally empty for now.
