@@ -11,10 +11,19 @@ required_apps = ["erpnext"]
 # Scheduled tasks
 # ---------------
 # Pull new bank transactions from finAPI into native Bank Transaction records.
-# The task is a safe no-op until at least one connection is configured.
+# The tasks are safe no-ops until at least one connection is configured.
+#
+# ⚠️ The 4x/day cadence is a PSD2 constraint, not a preference: unattended (PSU-absent)
+# bank updates are capped at 4 per 24h and connection. Syncing more often makes the bank
+# reject stage one — see erpnext_finapi/sync.py.
 scheduler_events = {
+	"cron": {
+		"0 7,11,15,19 * * *": [
+			"erpnext_finapi.tasks.sync_all_bank_connections",
+		],
+	},
 	"daily": [
-		"erpnext_finapi.tasks.sync_all_bank_connections",
+		"erpnext_finapi.tasks.check_consent_expiry",
 	],
 }
 

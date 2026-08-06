@@ -10,6 +10,7 @@
   "connection_name",
   "bank",
   "bank_name",
+  "finapi_bank_id",
   "finapi_connection_id",
   "column_break_bank",
   "finapi_user",
@@ -17,8 +18,10 @@
   "status",
   "section_consent",
   "consent_expiry",
+  "sync_enabled",
   "column_break_consent",
   "last_sync",
+  "last_error",
   "section_accounts",
   "accounts"
  ],
@@ -47,6 +50,12 @@
    "fieldtype": "Data",
    "label": "finAPI Bank Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "finapi_bank_id",
+   "fieldtype": "Data",
+   "label": "finAPI Bank ID",
+   "description": "finAPI's numeric bank id — set it with the bank search."
   },
   {
    "fieldname": "finapi_connection_id",
@@ -94,6 +103,12 @@
    "description": "PSD2 consent typically expires after 90 days; re-authentication is then required."
   },
   {
+   "default": "1",
+   "fieldname": "sync_enabled",
+   "fieldtype": "Check",
+   "label": "Include in Scheduled Sync"
+  },
+  {
    "fieldname": "column_break_consent",
    "fieldtype": "Column Break"
   },
@@ -101,6 +116,12 @@
    "fieldname": "last_sync",
    "fieldtype": "Datetime",
    "label": "Last Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_error",
+   "fieldtype": "Small Text",
+   "label": "Last Error",
    "read_only": 1
   },
   {
