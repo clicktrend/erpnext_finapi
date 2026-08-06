@@ -28,7 +28,7 @@ class finAPIBankConnection(Document):
 		for row in self.accounts or []:
 			if not (row.bank_account and row.finapi_account_id):
 				continue
-			sca_flow.stamp_integration_id(row.bank_account, str(row.finapi_account_id))
+			sca_flow.stamp_integration_id(row.bank_account, str(row.finapi_account_id), row.iban)
 			sca_flow.backfill_iban(row.bank_account, row.iban)
 
 	def on_trash(self):
