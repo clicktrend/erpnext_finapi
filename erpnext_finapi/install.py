@@ -33,10 +33,12 @@ WORKSPACE_SHORTCUTS = [
 		"type": "DocType",
 		"doc_view": "List",
 	},
+	# Bank Reconciliation Tool is a single DocType, NOT a Page — a Page link passes the
+	# workspace's loose shortcut check and then 404s on click.
 	{
 		"label": "Bank Reconciliation",
-		"link_to": "bank-reconciliation-tool",
-		"type": "Page",
+		"link_to": "Bank Reconciliation Tool",
+		"type": "DocType",
 	},
 ]
 
@@ -51,6 +53,7 @@ def after_migrate():
 
 def setup():
 	_ensure_workspace()
+	_ensure_workspace_sidebar()
 	_ensure_app_tile()
 
 
@@ -117,6 +120,23 @@ def _ensure_workspace():
 		doc.insert(ignore_permissions=True)
 	else:
 		doc.save()
+
+
+def _ensure_workspace_sidebar():
+	"""Give the workspace its ``Workspace Sidebar`` — an ordering trap, not cosmetics.
+
+	Frappe builds sidebars during ``install-app``, *before* ``after_install`` runs, so a
+	workspace created by an app's own install hook never gets one. The desktop icon that
+	links to the workspace then fails validation ("Could not find Link To"), and Frappe's
+	own error handler raises on top of that, so the real cause is invisible.
+
+	The core builder is idempotent (it skips workspaces that already have a sidebar).
+	"""
+	from frappe.desk.doctype.workspace_sidebar.workspace_sidebar import (
+		create_workspace_sidebar_for_workspaces,
+	)
+
+	create_workspace_sidebar_for_workspaces()
 
 
 def _ensure_app_tile():

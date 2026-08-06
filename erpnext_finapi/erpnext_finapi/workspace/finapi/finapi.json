@@ -1,0 +1,74 @@
+{
+ "app": "erpnext_finapi",
+ "charts": [],
+ "content": "[{\"id\": \"finapiHeader\", \"type\": \"header\", \"data\": {\"text\": \"<span class='h4'><b>finAPI Banking</b></span>\", \"col\": 12}}, {\"id\": \"finapiIntro\", \"type\": \"paragraph\", \"data\": {\"text\": \"Bank transactions are fetched from finAPI and written as native <b>Bank Transaction</b> records \\u2014 reconcile them with the standard ERPNext tools.\", \"col\": 12}}, {\"id\": \"finapiSpacer\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"finapiShortcut0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"finAPI Settings\", \"col\": 3}}, {\"id\": \"finapiShortcut1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Connections\", \"col\": 3}}, {\"id\": \"finapiShortcut2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"finAPI Users\", \"col\": 3}}, {\"id\": \"finapiShortcut3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sync Log\", \"col\": 3}}, {\"id\": \"finapiShortcut4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Transactions\", \"col\": 3}}, {\"id\": \"finapiShortcut5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Reconciliation\", \"col\": 3}}]",
+ "creation": "2026-08-06 14:33:16.950736",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "bank",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "finAPI",
+ "link_type": "DocType",
+ "links": [],
+ "modified": "2026-08-06 14:33:16.950736",
+ "modified_by": "Administrator",
+ "module": "ERPNext finAPI",
+ "name": "finAPI",
+ "number_cards": [],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Accounts Manager"
+  }
+ ],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "finAPI Settings",
+   "link_to": "finAPI Settings",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Bank Connections",
+   "link_to": "finAPI Bank Connection",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "finAPI Users",
+   "link_to": "finAPI User",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Sync Log",
+   "link_to": "finAPI Sync Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Bank Transactions",
+   "link_to": "Bank Transaction",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Bank Reconciliation",
+   "link_to": "Bank Reconciliation Tool",
+   "type": "DocType"
+  }
+ ],
+ "title": "finAPI",
+ "type": "Workspace"
+}
