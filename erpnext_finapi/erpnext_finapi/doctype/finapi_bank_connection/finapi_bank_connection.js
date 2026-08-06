@@ -130,7 +130,25 @@ function render_banks(frm, dialog, banks) {
 // SCA wizard
 // --------------------------------------------------------------------------- //
 
-function start_sca(frm, method) {
+async function start_sca(frm, method) {
+	// Ask for the bank BEFORE asking for a PIN — failing afterwards throws away
+	// credentials the user already typed.
+	if (method === "start_import" && !frm.doc.finapi_bank_id) {
+		frappe.msgprint({
+			title: __("Bank missing"),
+			message: __("Use <b>Search Bank</b> first — the import needs finAPI's bank id."),
+			indicator: "orange",
+		});
+		return;
+	}
+
+	// The SCA flow runs against the STORED document (it writes the connection id and
+	// accounts back into it), so unsaved edits must land first — otherwise the bank id
+	// you just picked exists only in the form and the import rejects it.
+	if (frm.is_dirty()) {
+		await frm.save();
+	}
+
 	// The bank declares which credentials it wants — build the form from that.
 	frappe.call({
 		method: METHOD + "get_login_fields",
