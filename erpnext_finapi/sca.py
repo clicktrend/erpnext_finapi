@@ -276,7 +276,7 @@ def map_accounts(doc, *, client, token: str, include_removed: bool = False) -> i
 
 		if row.bank_account:
 			linked += 1
-			stamp_integration_id(row.bank_account, account_id)
+			stamp_integration_id(row.bank_account, account_id, row.iban)
 
 	doc.known_account_ids = json.dumps(sorted(known | {str(a.get("id")) for a in accounts}))
 	return linked
@@ -344,22 +344,55 @@ def backfill_iban(bank_account: str, iban: str | None) -> None:
 		)
 
 
-def stamp_integration_id(bank_account: str, finapi_account_id: str) -> None:
+def stamp_integration_id(bank_account: str, finapi_account_id: str, iban: str | None = None) -> None:
 	"""Mirror the finAPI account id onto the native ``integration_id`` field.
 
 	That is the field ERPNext's own bank feeds (Plaid) use, so the sync — and a future
 	v16 unified bank-feed provider — can resolve an account without our child table.
-	An id set by a different integration is left alone.
+
+	``integration_id`` carries a **unique index**: one external account belongs to
+	exactly one Bank Account. Correcting a mapping therefore has to release the previous
+	holder first, otherwise the save dies on a duplicate-key error from deep inside the
+	ORM — and getting a mapping wrong once is entirely normal.
 	"""
+	finapi_account_id = str(finapi_account_id)
 	current = frappe.db.get_value("Bank Account", bank_account, "integration_id")
-	if current and current != finapi_account_id:
-		frappe.msgprint(
-			_("Bank Account {0} already carries a different Integration ID ({1}) — leaving it as is.").format(
-				bank_account, current
-			),
-			indicator="orange",
-		)
+	if current == finapi_account_id:
 		return
 
-	if not current:
-		frappe.db.set_value("Bank Account", bank_account, "integration_id", finapi_account_id)
+	previous = frappe.db.get_value(
+		"Bank Account", {"integration_id": finapi_account_id, "name": ("!=", bank_account)}
+	)
+	if previous:
+		_release_bank_account(previous, iban)
+		frappe.msgprint(
+			_("finAPI account {0} was linked to {1} — moved to {2}.").format(
+				finapi_account_id, previous, bank_account
+			),
+			indicator="orange",
+			title=_("Mapping corrected"),
+		)
+
+	if current:
+		frappe.msgprint(
+			_("Bank Account {0} was linked to finAPI account {1} and now points to {2}.").format(
+				bank_account, current, finapi_account_id
+			),
+			indicator="orange",
+			title=_("Mapping changed"),
+		)
+
+	frappe.db.set_value("Bank Account", bank_account, "integration_id", finapi_account_id)
+
+
+def _release_bank_account(bank_account: str, iban: str | None) -> None:
+	"""Undo a mapping on the Bank Account that previously held this finAPI account.
+
+	The IBAN is only cleared when it is the one this mapping wrote — a Bank Account may
+	legitimately carry its own IBAN, and wiping that would be worse than the wrong link.
+	"""
+	frappe.db.set_value("Bank Account", bank_account, "integration_id", None)
+
+	iban = normalize_iban(iban)
+	if iban and normalize_iban(frappe.db.get_value("Bank Account", bank_account, "iban")) == iban:
+		frappe.db.set_value("Bank Account", bank_account, "iban", None)
