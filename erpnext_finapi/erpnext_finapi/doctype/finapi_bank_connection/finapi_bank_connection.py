@@ -48,14 +48,24 @@ def _load_credentials(login_credentials) -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 
+def _check_setup_permission() -> None:
+	"""Guard the setup helpers, which run before a connection document exists."""
+	if not frappe.has_permission("finAPI Bank Connection", "write"):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+
 @frappe.whitelist()
-def search_banks(connection: str, search: str) -> list[dict]:
-	"""Search finAPI's bank directory for the picker."""
-	doc = frappe.get_doc("finAPI Bank Connection", connection)
-	doc.check_permission("write")
+def search_banks(search: str, finapi_user: str) -> list[dict]:
+	"""Search finAPI's bank directory for the picker.
+
+	Takes the finAPI User rather than a connection, so the search works while the
+	connection is still an unsaved draft — that is exactly when you need it, since the
+	bank id it returns is what you fill in.
+	"""
+	_check_setup_permission()
 
 	settings = frappe.get_single("finAPI Settings")
-	client, token = get_user_session(doc.finapi_user)
+	client, token = get_user_session(finapi_user)
 
 	# finAPI's fake banks are what you want in Sandbox and pure noise in Live.
 	banks = (
@@ -80,22 +90,21 @@ def search_banks(connection: str, search: str) -> list[dict]:
 
 
 @frappe.whitelist()
-def get_login_fields(connection: str) -> list[dict]:
+def get_login_fields(finapi_user: str, bank_id: str, interface: str | None = None) -> list[dict]:
 	"""The credential labels the chosen bank declares for the chosen interface.
 
 	Banks differ (Anmeldename/PIN, Kundennummer/Passwort, …), so the dialog has to be
 	built from what finAPI reports rather than from a hardcoded form.
 	"""
-	doc = frappe.get_doc("finAPI Bank Connection", connection)
-	doc.check_permission("write")
+	_check_setup_permission()
 
-	if not doc.finapi_bank_id:
+	if not bank_id:
 		frappe.throw(_("Set the finAPI Bank ID first (use the bank search)."))
 
-	client, token = get_user_session(doc.finapi_user)
-	bank = client.get_bank(doc.finapi_bank_id, token=token)
+	client, token = get_user_session(finapi_user)
+	bank = client.get_bank(bank_id, token=token)
 
-	wanted = doc.interface or c.INTERFACE_XS2A
+	wanted = interface or c.INTERFACE_XS2A
 	interfaces = bank.get("interfaces") or []
 	interface = next((i for i in interfaces if i.get("bankingInterface") == wanted), None) or (
 		interfaces[0] if interfaces else {}
