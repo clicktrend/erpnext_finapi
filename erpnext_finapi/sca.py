@@ -194,7 +194,7 @@ def _complete(connection: str, payload: dict, *, token: str, client) -> dict:
 	doc.bank_name = payload.get("name") or (payload.get("bank") or {}).get("name") or doc.bank_name
 	doc.status = "Connected"
 	doc.last_error = None
-	doc.consent_expiry = _consent_expiry(payload)
+	doc.consent_expiry = consent_expiry(payload)
 
 	created = map_accounts(doc, client=client, token=token)
 	doc.save()
@@ -207,7 +207,7 @@ def _complete(connection: str, payload: dict, *, token: str, client) -> dict:
 	}
 
 
-def _consent_expiry(payload: dict):
+def consent_expiry(payload: dict):
 	"""finAPI's consent expiry if it tells us one, else the PSD2 default of 90 days.
 
 	finAPI has used several shapes and ISO-8601 with an offset, so anything unparseable
@@ -261,7 +261,7 @@ def map_accounts(doc, *, client, token: str) -> int:
 
 		if row.bank_account:
 			linked += 1
-			_stamp_integration_id(row.bank_account, account_id)
+			stamp_integration_id(row.bank_account, account_id)
 
 	return linked
 
@@ -290,7 +290,7 @@ def find_bank_account_by_iban(iban: str | None) -> str | None:
 	return None
 
 
-def _stamp_integration_id(bank_account: str, finapi_account_id: str) -> None:
+def stamp_integration_id(bank_account: str, finapi_account_id: str) -> None:
 	"""Mirror the finAPI account id onto the native ``integration_id`` field.
 
 	That is the field ERPNext's own bank feeds (Plaid) use, so the sync — and a future

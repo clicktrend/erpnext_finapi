@@ -20,6 +20,14 @@ class finAPIBankConnection(Document):
 	:mod:`erpnext_finapi.sync`. This controller only exposes them to the Desk.
 	"""
 
+	def on_update(self):
+		# Accounts are often linked by hand (an ERPNext Bank Account frequently has no
+		# IBAN stored, so the automatic match finds nothing). Mirror the finAPI account
+		# id onto the native integration_id here too, not just on automatic linking.
+		for row in self.accounts or []:
+			if row.bank_account and row.finapi_account_id:
+				sca_flow.stamp_integration_id(row.bank_account, str(row.finapi_account_id))
+
 	def on_trash(self):
 		# Never leave in-flight login credentials behind in the cache.
 		sca_flow.clear_session(self.name)
