@@ -60,6 +60,7 @@ The well-known [ALYF Banking](https://github.com/alyf-de/banking) app is excelle
 - 🔎 **Discovers connections** your finAPI user already has — no second SCA consent
 - ⏰ **90-day consent watchdog** — warns before PSD2 consent lapses instead of failing silently
 - 🔐 Credentials in **encrypted** DocType fields (never in the repo, never in `.env`)
+- 🧭 Own **Desk app tile + workspace** (`/app/finapi`), visible to System Manager / Accounts Manager
 - 🧪 **Sandbox-first** — develop and test without a live finAPI contract
 - ♻️ Reuses ERPNext-native **Bank Reconciliation Tool**
 
