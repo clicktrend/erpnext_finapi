@@ -6,9 +6,19 @@ const METHOD =
 
 frappe.ui.form.on("finAPI Bank Connection", {
 	refresh(frm) {
-		if (frm.is_new()) return;
+		// Available on an unsaved draft too — the bank search is what fills in the bank
+		// id, so hiding it until after the first save is exactly backwards.
+		frm.add_custom_button(__("Search Bank"), () => search_bank(frm));
 
-		frm.add_custom_button(__("Search Bank"), () => search_bank(frm), __("Setup"));
+		if (frm.is_new()) {
+			frm.set_intro(
+				__(
+					"1. Pick the finAPI User and hit <b>Search Bank</b> — that fills in the bank id. 2. Save; <b>Import Connection (SCA)</b> then appears and walks you through the TAN."
+				),
+				"blue"
+			);
+			return;
+		}
 
 		if (!frm.doc.finapi_connection_id) {
 			frm.add_custom_button(__("Import Connection (SCA)"), () => start_sca(frm, "start_import"))
@@ -30,6 +40,15 @@ frappe.ui.form.on("finAPI Bank Connection", {
 // --------------------------------------------------------------------------- //
 
 function search_bank(frm) {
+	if (!frm.doc.finapi_user) {
+		frappe.msgprint({
+			title: __("finAPI User missing"),
+			message: __("Pick a finAPI User first — the bank directory is read with its token."),
+			indicator: "orange",
+		});
+		return;
+	}
+
 	const dialog = new frappe.ui.Dialog({
 		title: __("Search Bank"),
 		fields: [
@@ -38,7 +57,9 @@ function search_bank(frm) {
 				fieldtype: "Data",
 				label: __("Name, BLZ or BIC"),
 				reqd: 1,
-				description: __("For example: WELADED1HAM or Sparkasse Hamm"),
+				description: __(
+					"Name, sort code (BLZ) or BIC. Searching by the BLZ from your IBAN is the surest way — big banks have dozens of near-identical entries."
+				),
 			},
 			{ fieldname: "results", fieldtype: "HTML" },
 		],
@@ -46,7 +67,7 @@ function search_bank(frm) {
 		primary_action(values) {
 			frappe.call({
 				method: METHOD + "search_banks",
-				args: { connection: frm.doc.name, search: values.search },
+				args: { search: values.search, finapi_user: frm.doc.finapi_user },
 				freeze: true,
 				freeze_message: __("Searching finAPI…"),
 				callback: (r) => render_banks(frm, dialog, r.message || []),
@@ -82,11 +103,25 @@ function render_banks(frm, dialog, banks) {
 				e.preventDefault();
 				frm.set_value("finapi_bank_id", String(bank.id));
 				frm.set_value("bank_name", bank.name);
-				if ((bank.interfaces || []).length && !bank.interfaces.includes(frm.doc.interface)) {
-					frm.set_value("interface", bank.interfaces[0]);
+
+				// Not every bank offers XS2A — Volksbanken are often FinTS only. Picking an
+				// interface the bank does not expose fails later, deep inside the SCA flow.
+				const interfaces = bank.interfaces || [];
+				if (interfaces.length && !interfaces.includes(frm.doc.interface)) {
+					frm.set_value("interface", interfaces[0]);
+					frappe.show_alert({
+						message: __("Banking interface set to {0} — the only one this bank offers.", [
+							interfaces[0],
+						]),
+						indicator: "blue",
+					});
 				}
+
 				dialog.hide();
-				frappe.show_alert({ message: __("Bank selected — please save."), indicator: "green" });
+				frappe.show_alert({
+					message: __("{0} selected (finAPI id {1}).", [bank.name, bank.id]),
+					indicator: "green",
+				});
 			});
 	});
 }
@@ -99,7 +134,11 @@ function start_sca(frm, method) {
 	// The bank declares which credentials it wants — build the form from that.
 	frappe.call({
 		method: METHOD + "get_login_fields",
-		args: { connection: frm.doc.name },
+		args: {
+			finapi_user: frm.doc.finapi_user,
+			bank_id: frm.doc.finapi_bank_id,
+			interface: frm.doc.interface,
+		},
 		freeze: true,
 		freeze_message: __("Asking the bank which credentials it needs…"),
 		callback: (r) => {

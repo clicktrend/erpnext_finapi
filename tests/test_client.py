@@ -338,3 +338,38 @@ class TestErrorParsing(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class TestBankSearchTerm(unittest.TestCase):
+	"""The bank directory knows sort codes, not IBANs — but an IBAN is what users have."""
+
+	def test_german_iban_yields_its_sort_code(self):
+		from erpnext_finapi.finapi.client import bank_search_term
+
+		self.assertEqual(bank_search_term("DE02120300000000202051"), "44160014")
+		self.assertEqual(bank_search_term("DE02100500000054540402"), "41050095")
+
+	def test_spaces_and_case_tolerated(self):
+		from erpnext_finapi.finapi.client import bank_search_term
+
+		self.assertEqual(bank_search_term("DE02120300000000202051"), "44160014")
+
+	def test_plain_searches_pass_through(self):
+		from erpnext_finapi.finapi.client import bank_search_term
+
+		for value in ("Sparkasse Hamm", "WELADED1HAM", "41050095", ""):
+			self.assertEqual(bank_search_term(value), value)
+
+	def test_non_german_iban_passes_through(self):
+		# Only DE encodes the sort code at 5-12; do not mangle others.
+		from erpnext_finapi.finapi.client import bank_search_term
+
+		self.assertEqual(bank_search_term("FR7630006000011234567890189"), "FR7630006000011234567890189")
+
+	def test_search_banks_sends_the_reduced_term(self):
+		client, session = make_client([TOKEN_RESPONSE, FakeResponse(200, {"banks": []})])
+		token = client.authenticate_default_client()
+
+		client.search_banks("DE02120300000000202051", token=token)
+
+		self.assertEqual(session.last["params"]["search"], "44160014")

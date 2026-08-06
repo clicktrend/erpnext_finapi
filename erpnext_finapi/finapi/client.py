@@ -30,6 +30,22 @@ from erpnext_finapi.finapi.exceptions import (
 )
 
 
+def bank_search_term(search: str) -> str:
+	"""Turn what a user naturally pastes into something the bank directory can match.
+
+	Reaching for the IBAN is the obvious move — it is the number in front of you — but
+	finAPI's directory only knows names, BICs and sort codes. A German IBAN carries the
+	sort code in positions 5-12, so pull it out instead of answering "no bank found" to
+	a perfectly good input.
+	"""
+	compact = (search or "").replace(" ", "").upper()
+
+	if len(compact) == 22 and compact.startswith("DE") and compact[2:].isdigit():
+		return compact[4:12]
+
+	return search
+
+
 class FinApiClient:
 	"""A thin, typed wrapper over the finAPI Access V2 REST API."""
 
@@ -254,10 +270,13 @@ class FinApiClient:
 	) -> dict:
 		"""Search banks by name/BLZ/BIC.
 
+		A full German IBAN is accepted and reduced to its sort code — see
+		:func:`bank_search_term`.
+
 		⚠️ Needs a USER token — a client token returns 403 UNAUTHORIZED_ACCESS.
 		``is_test_bank`` filters finAPI's fake banks (wanted in Sandbox, noise in Live).
 		"""
-		params: dict = {"search": search, "page": page, "perPage": per_page}
+		params: dict = {"search": bank_search_term(search), "page": page, "perPage": per_page}
 		if is_test_bank is not None:
 			params["isTestBank"] = "true" if is_test_bank else "false"
 		return self._request("GET", c.EP_BANKS, token=token, params=params)
