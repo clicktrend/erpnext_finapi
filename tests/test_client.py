@@ -346,13 +346,13 @@ class TestBankSearchTerm(unittest.TestCase):
 	def test_german_iban_yields_its_sort_code(self):
 		from erpnext_finapi.finapi.client import bank_search_term
 
-		self.assertEqual(bank_search_term("DE02120300000000202051"), "44160014")
-		self.assertEqual(bank_search_term("DE02100500000054540402"), "41050095")
+		self.assertEqual(bank_search_term("DE02120300000000202051"), "12030000")
+		self.assertEqual(bank_search_term("DE02100500000054540402"), "10050000")
 
 	def test_spaces_and_case_tolerated(self):
 		from erpnext_finapi.finapi.client import bank_search_term
 
-		self.assertEqual(bank_search_term("DE02120300000000202051"), "44160014")
+		self.assertEqual(bank_search_term("de02 1203 0000 0000 2020 51"), "12030000")
 
 	def test_plain_searches_pass_through(self):
 		from erpnext_finapi.finapi.client import bank_search_term
@@ -372,7 +372,7 @@ class TestBankSearchTerm(unittest.TestCase):
 
 		client.search_banks("DE02120300000000202051", token=token)
 
-		self.assertEqual(session.last["params"]["search"], "44160014")
+		self.assertEqual(session.last["params"]["search"], "12030000")
 
 
 PSU_HEADERS = {
