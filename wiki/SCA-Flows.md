@@ -47,12 +47,45 @@ import_bank_connection(bank_id, login_credentials=[...])
 
 ### Rules
 
+- ⚠️ **finAPI nests `multiStepAuthentication` inside `errors[0]`**, not at the top level of the
+  510 body. Reading only the top level turns every SCA step into an unexplained error. The client
+  reads `errors[0]` first and tolerates a top-level variant.
 - **The full body — including `loginCredentials` — is re-sent on every step**, alongside the
   `multiStepAuthentication` object. The `hash` ties the steps together.
-- **Keep PIN/TAN server-side and transient.** Store the in-flight state in the bank connection
-  doc or a short-lived cache key, **never in the browser**, and clear it the moment the flow ends
-  (success or abort). This is PSD2-sensitive — review before production.
+- **Keep PIN/TAN server-side and transient.** `sca.py` holds the in-flight state in the Frappe
+  cache under a 15-minute TTL, keyed by the bank connection, and clears it on success, cancel and
+  failure alike. It is never returned to the browser and never written to the database.
+- **`storeSecrets: true`** is sent on import so finAPI can later refresh the connection unattended.
+  Without it the scheduled sync can never run stage one.
 - Interface: usually `XS2A`; `FINTS_SERVER` is also possible. Test both for a given bank.
+
+### In the Desk
+
+`finAPI Bank Connection` drives the whole flow: **Search Bank** → **Import Connection (SCA)** →
+credential dialog (built from the labels the bank declares) → TAN scheme → TAN → done, accounts
+mapped. `TWO_STEP_PROCEDURE_REQUIRED`, `CHALLENGE_RESPONSE_REQUIRED`, `REDIRECT_REQUIRED` and
+`DECOUPLED_AUTH_REQUIRED` are all handled.
+
+## C. Re-consent (the 90-day wall)
+
+PSD2 consent expires — typically after 90 days, and finAPI reports the exact date in
+`interfaces[].aisConsent.expiresAt`. When it lapses the sync stops delivering new transactions
+**silently**, which is why a daily task warns ahead of time (`consent_warning_days`) and flags the
+connection `Update Required`.
+
+Renewal is **Update Connection**: the same multi-step machine against
+`POST /bankConnections/update`.
+
+> ⚠️ The update endpoint's field is **`bankingInterface`**, exactly like the import. finAPI's prose
+> docs say `interface`; sending that makes finAPI reject the entire body with "request contains no
+> data / invalid JSON" — a 400 that looks like an encoding bug and is not one.
+
+## D. Adopting a connection that already exists
+
+If the finAPI user already owns connections (created by a previous system or through finAPI's
+hosted web form), **do not re-import** — that would force a second consent. Use **Discover Bank
+Connections** on the `finAPI User`: it reads them and creates the matching records, accounts
+included.
 
 ## Why the app ships B first
 

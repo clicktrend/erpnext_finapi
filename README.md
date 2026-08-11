@@ -2,7 +2,9 @@
 
 **Self-hosted [finAPI](https://www.finapi.io/) bank-account integration for ERPNext — bring your own finAPI contract, sync transactions, reconcile natively.**
 
-> ⚠️ **Status: Alpha / work in progress.** The data model, core API client and docs are in place. The SCA import flow and scheduled sync are being implemented against the finAPI sandbox. Not yet production-ready. See [ROADMAP.md](ROADMAP.md).
+> ⚠️ **Status: Beta.** The feed is complete and works: SCA bank import, account mapping, and the two-stage scheduled sync into native `Bank Transaction`s. The read and write path is verified against a **production** finAPI mandator (real connection, real transactions, no duplicates on re-run). Still open: the finAPI-hosted **WebForm 2.0** flow (blocked on finAPI enabling the product) and a live SCA import with a real TAN. See [ROADMAP.md](ROADMAP.md).
+>
+> The direct SCA flow accepts PIN/TAN **on your own server** (transient, cache-only, never stored). That is a deliberate self-hosted trade-off — read [SCA Flows](wiki/SCA-Flows.md) before using it in production.
 
 ---
 
@@ -49,18 +51,23 @@ The well-known [ALYF Banking](https://github.com/alyf-de/banking) app is excelle
 ## Features
 
 - 🔌 **Bank connection import with SCA** — chipTAN / Strong Customer Authentication
+  - **Direct multi-step** (`510` challenge–response driven by a Desk wizard) — *works*
   - **WebForm 2.0** (finAPI-hosted, PIN/TAN never touches your server) — *planned*
-  - **Direct multi-step** (`510` challenge–response handled in-app) — *in progress*
-- 🔄 **Scheduled transaction sync** → native `Bank Transaction` (deduplicated)
-- 🏦 Maps finAPI accounts to native ERPNext **Bank Account**
+- 🔄 **Scheduled transaction sync** → native `Bank Transaction` (deduplicated), 4×/day
+  - **two-stage**: it makes finAPI fetch from your bank first, then reads — a read-only sync
+    silently freezes on the snapshot taken at import time
+- 🏦 Maps finAPI accounts to native ERPNext **Bank Account** (by IBAN or by hand)
+- 🔎 **Discovers connections** your finAPI user already has — no second SCA consent
+- ⏰ **90-day consent watchdog** — warns before PSD2 consent lapses instead of failing silently
 - 🔐 Credentials in **encrypted** DocType fields (never in the repo, never in `.env`)
+- 🧭 Own **Desk app tile + workspace** (`/app/finapi`), visible to System Manager / Accounts Manager
 - 🧪 **Sandbox-first** — develop and test without a live finAPI contract
 - ♻️ Reuses ERPNext-native **Bank Reconciliation Tool**
 
 ## Requirements
 
-- [Frappe](https://github.com/frappe/frappe) v15+
-- [ERPNext](https://github.com/frappe/erpnext) v15+ (provides `Bank`, `Bank Account`, `Bank Transaction`, Bank Reconciliation Tool)
+- [Frappe](https://github.com/frappe/frappe) v15+ — **developed and tested on v16**
+- [ERPNext](https://github.com/frappe/erpnext) v15+ — **developed and tested on v16** (provides `Bank`, `Bank Account`, `Bank Transaction`, Bank Reconciliation Tool)
 - A finAPI Access account — [sandbox is free](https://finapi.io/), live needs a contract
 
 ## Installation
@@ -77,9 +84,11 @@ bench --site your-site.local migrate
 1. Create a free finAPI **sandbox** account and register a *data* client and an *admin* client.
 2. In ERPNext open **finAPI Settings**, set `Environment = Sandbox`, paste both client id/secret pairs, click **Test Connection**.
 3. Create a **finAPI User** for your Company (registers a finAPI user via the data client).
-4. Open **finAPI Bank Connection → New**, pick a sandbox test bank, run the import (SCA) flow.
-5. Run **Sync now** (or wait for the scheduler) → transactions appear as native **Bank Transaction**s.
-6. Open the native **Bank Reconciliation Tool** and match them.
+4. Open **finAPI Bank Connection → New**, **Search Bank**, save, run **Import Connection (SCA)**.
+   *(Already have connections at finAPI? Use **Discover Bank Connections** on the finAPI User instead.)*
+5. Point each finAPI account in the connection's account table at an ERPNext **Bank Account**.
+6. Run **Sync Now** (or enable the scheduler) → transactions appear as native **Bank Transaction**s.
+7. Open the native **Bank Reconciliation Tool** and match them.
 
 See the [Wiki](wiki/Home.md) for the full setup, configuration, and architecture.
 

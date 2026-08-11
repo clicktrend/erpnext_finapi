@@ -16,6 +16,12 @@
   "column_break_admin",
   "admin_client_id",
   "admin_client_secret",
+  "section_sync",
+  "auto_sync",
+  "initial_sync_days",
+  "column_break_sync",
+  "sync_overlap_days",
+  "consent_warning_days",
   "section_callback",
   "redirect_url",
   "section_status",
@@ -96,6 +102,43 @@
    "label": "Admin Client Secret"
   },
   {
+   "fieldname": "section_sync",
+   "fieldtype": "Section Break",
+   "label": "Transaction Sync"
+  },
+  {
+   "default": "1",
+   "fieldname": "auto_sync",
+   "fieldtype": "Check",
+   "label": "Enable Scheduled Sync",
+   "description": "Master switch. The scheduler runs 4×/day — PSD2 caps unattended bank updates at 4 per 24h."
+  },
+  {
+   "default": "90",
+   "fieldname": "initial_sync_days",
+   "fieldtype": "Int",
+   "label": "Initial Sync (days)",
+   "description": "How far back the very first sync of a connection reads."
+  },
+  {
+   "fieldname": "column_break_sync",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "2",
+   "fieldname": "sync_overlap_days",
+   "fieldtype": "Int",
+   "label": "Sync Overlap (days)",
+   "description": "Safety overlap re-read on every sync. Duplicates are filtered by finAPI transaction id."
+  },
+  {
+   "default": "14",
+   "fieldname": "consent_warning_days",
+   "fieldtype": "Int",
+   "label": "Consent Warning (days)",
+   "description": "Warn this many days before the 90-day PSD2 consent expires."
+  },
+  {
    "fieldname": "section_callback",
    "fieldtype": "Section Break",
    "label": "WebForm 2.0 Callback"
@@ -137,6 +180,7 @@
    "write": 1
   }
  ],
+ "icon": "bank",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
