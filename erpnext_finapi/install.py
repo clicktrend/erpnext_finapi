@@ -53,8 +53,7 @@ def after_migrate():
 
 def setup():
 	_ensure_workspace()
-	_ensure_workspace_sidebar()
-	_ensure_app_tile()
+	_ensure_desk_entry()
 
 
 def _ensure_workspace():
@@ -122,38 +121,38 @@ def _ensure_workspace():
 		doc.save()
 
 
-def _ensure_workspace_sidebar():
-	"""Give the workspace its ``Workspace Sidebar`` — an ordering trap, not cosmetics.
+def _ensure_desk_entry():
+	"""Re-ensure the workspace sidebar *and* the /desk app tile on every migrate.
 
-	Frappe builds sidebars during ``install-app``, *before* ``after_install`` runs, so a
-	workspace created by an app's own install hook never gets one. The desktop icon that
-	links to the workspace then fails validation ("Could not find Link To"), and Frappe's
-	own error handler raises on top of that, so the real cause is invisible.
+	Both are an ordering trap, not cosmetics. Frappe builds sidebars during
+	``install-app``, *before* ``after_install`` runs, so a workspace created by an app's
+	own install hook never gets one; the desktop icon that links to it then fails
+	validation ("Could not find Link To"), and Frappe's own error handler raises on top
+	of that, so the real cause is invisible. App tiles are likewise built in
+	``after_app_install`` only, and nothing restores a missing one on migrate.
 
-	The core builder is idempotent (it skips workspaces that already have a sidebar).
+	Frappe's own ``after_app_install`` handler does exactly these two things, in exactly
+	this order — so run that, resolved from its hooks, instead of importing the two
+	underlying builders. Those have already moved once between releases
+	(auto_generate_icons_and_sidebar -> create_desktop_icons_for_app, now gated behind
+	is_desktop_icons_page), and this runs from ``after_migrate``: a hard import of a
+	renamed symbol would abort ``bench migrate`` on every site, not merely cost a tile.
+	Both builders are idempotent, and failures are logged rather than raised.
+
+	A Desktop Icon is named after its label, so a workspace-derived icon can occupy the
+	app tile's name and make the tile creation collide — drop such a stale icon first.
 	"""
-	from frappe.desk.doctype.workspace_sidebar.workspace_sidebar import (
-		create_workspace_sidebar_for_workspaces,
-	)
-
-	create_workspace_sidebar_for_workspaces()
-
-
-def _ensure_app_tile():
-	"""Re-ensure the /desk app tile on every migrate.
-
-	Frappe v16 builds app tiles in ``after_app_install`` only. A Desktop Icon is named
-	after its label, so a workspace-derived icon can occupy the app tile's name and make
-	the tile creation collide — drop such a stale icon first.
-	"""
-	from frappe.desk.doctype.desktop_icon.desktop_icon import create_desktop_icons_from_installed_apps
-
 	app_title = frappe.get_hooks("app_title", app_name="erpnext_finapi")[0]
 	stale_icon_type = frappe.db.get_value("Desktop Icon", app_title, "icon_type")
 	if stale_icon_type and stale_icon_type != "App":
 		frappe.delete_doc("Desktop Icon", app_title, ignore_permissions=True)
 
-	create_desktop_icons_from_installed_apps()
+	try:
+		for method in frappe.get_hooks("after_app_install", app_name="frappe"):
+			frappe.get_attr(method)("erpnext_finapi")
+	except Exception:
+		frappe.log_error(title="erpnext_finapi: could not ensure the desk workspace entry")
+		return
 
 	frappe.cache.delete_key("desktop_icons")
 	frappe.cache.delete_key("bootinfo")
