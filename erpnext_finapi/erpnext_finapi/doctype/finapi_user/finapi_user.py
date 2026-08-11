@@ -23,6 +23,11 @@ def register(user: str):
 	attempt creation again, which finAPI rejects — guard in the UI.
 	"""
 	doc = frappe.get_doc("finAPI User", user)
+	# Before the finAPI call, not after: doc.save() below would catch an unauthorized
+	# caller, but only once the user already exists at finAPI. finAPI rejects a second
+	# creation, so that would leave this record permanently unregisterable.
+	doc.check_permission("write")
+
 	client = get_client()
 	result = client.create_user(
 		user_id=doc.finapi_username or None,
