@@ -48,7 +48,17 @@ def after_install():
 
 
 def after_migrate():
-	setup()
+	"""Never let cosmetics abort someone else's migration.
+
+	``after_migrate`` runs for every app on every ``bench migrate`` — including core
+	upgrades. If this hook raises (say a future Frappe adds a mandatory Workspace
+	field), it does not merely cost a tile: it aborts the whole migration for the site.
+	A missing workspace is repaired by the next migrate.
+	"""
+	try:
+		setup()
+	except Exception:
+		frappe.log_error(title="erpnext_finapi: Workspace/Kachel-Setup übersprungen")
 
 
 def setup():
