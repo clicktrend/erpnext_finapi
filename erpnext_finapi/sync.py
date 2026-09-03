@@ -13,7 +13,10 @@ import time, so the sync reports "nothing new" forever while the account fills u
 predecessor system lost months to exactly this.
 
 Everything downstream of ``Bank Transaction`` (matching, Payment Entries, clearing) is
-native ERPNext and deliberately not reimplemented here.
+native ERPNext and deliberately not reimplemented here. The one thing we do after a run
+that created rows is to hand them to ERPNext's own ``Bank Transaction Rule`` evaluation
+(v16+), exactly like the built-in statement import does — see
+:func:`run_bank_transaction_rules`.
 """
 
 from __future__ import annotations
@@ -85,6 +88,8 @@ def sync_connection(connection: str, *, update_bank: bool = True, psu_headers: d
 			time.sleep(c.POST_UPDATE_SETTLE_SECONDS)
 
 		fetched, created = _import_transactions(doc, settings, client=client, token=token)
+		if created:
+			run_bank_transaction_rules()
 
 		doc.db_set("last_sync", now_datetime(), update_modified=False)
 		if not doc.last_error:
@@ -222,6 +227,58 @@ def _stamp_last_integration_date(bank_accounts) -> None:
 	"""Keep the native ``last_integration_date`` current, like ERPNext's own feeds do."""
 	for bank_account in set(bank_accounts):
 		frappe.db.set_value("Bank Account", bank_account, "last_integration_date", today())
+
+
+# --------------------------------------------------------------------------- #
+# Stage 3 — let ERPNext's Bank Transaction Rules classify what we just imported
+# --------------------------------------------------------------------------- #
+
+# Private on purpose: the public ``run_rule_evaluation`` is the whitelisted button handler
+# (permission check + enqueue). Feeds and the built-in statement import need the worker.
+RULE_EVALUATION = "erpnext.accounts.doctype.bank_transaction_rule.bank_transaction_rule._run_rule_evaluation"
+
+
+def run_bank_transaction_rules(*, now: bool = False) -> bool:
+	"""Queue ERPNext's own rule evaluation for the transactions this run created.
+
+	ERPNext v16 ships ``Bank Transaction Rule`` (from Mint): a prioritised list of
+	description and amount conditions that classifies an unreconciled transaction as
+	Bank Entry, Payment Entry or Transfer. It only records the match
+	(``matched_transaction_rule``) — nothing is posted, a person still confirms it in
+	the banking UI. Mint's statement import runs the rules right after importing, and a
+	bank feed must behave the same; otherwise the feed's transactions sit unclassified
+	until someone presses "Run Rules" or enables the hourly job in Accounts Settings.
+
+	Evaluation is idempotent (``is_rule_evaluated``), so overlapping runs cost nothing.
+	Returns whether an evaluation was queued. ``now`` runs it inline (tests, CLI).
+	"""
+	if not frappe.db.exists("DocType", "Bank Transaction Rule"):
+		return False  # ERPNext < v16 — nothing to run
+	if not frappe.db.count("Bank Transaction Rule"):
+		return False
+
+	try:
+		evaluate = frappe.get_attr(RULE_EVALUATION)
+	except (ImportError, AttributeError):
+		# A silent no-op would be the worst outcome: say loudly that the hook moved.
+		frappe.log_error(
+			title=_("finAPI: Bank Transaction Rule evaluation not found"),
+			message=f"{RULE_EVALUATION} does not exist on this ERPNext version — rules were not run.",
+		)
+		return False
+
+	try:
+		# The new rows are still inside this transaction; a worker must not start
+		# before they are committed or it evaluates against an empty set.
+		frappe.enqueue(evaluate, force_evaluate=False, now=now, enqueue_after_commit=not now)
+	except Exception:
+		# The import itself succeeded — record the rule failure, do not fail the sync.
+		frappe.log_error(
+			title=_("finAPI: could not queue Bank Transaction Rule evaluation"),
+			message=frappe.get_traceback(),
+		)
+		return False
+	return True
 
 
 # --------------------------------------------------------------------------- #

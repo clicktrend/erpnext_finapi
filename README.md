@@ -63,6 +63,8 @@ The well-known [ALYF Banking](https://github.com/alyf-de/banking) app is excelle
 - 🧭 Own **Desk app tile + workspace** (`/app/finapi`), visible to System Manager / Accounts Manager
 - 🧪 **Sandbox-first** — develop and test without a live finAPI contract
 - ♻️ Reuses ERPNext-native **Bank Reconciliation Tool**
+- 🧮 Hands every new batch to ERPNext's own **Bank Transaction Rules** (v16+) right after the sync,
+  like the built-in statement import does — the rules only classify, a person still confirms
 
 ## Requirements
 

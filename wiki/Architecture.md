@@ -76,6 +76,19 @@ human runs **Update Connection**; the sync still reads whatever finAPI already h
 > **PSD2 caps unattended updates at 4 per 24h and connection.** The scheduler therefore runs
 > 4×/day (`0 7,11,15,19`). User-present updates (someone clicking a button) are not capped.
 
+### After the read: ERPNext's own rules run
+
+ERPNext v16 ships **Bank Transaction Rule** (from the Mint merge): a prioritised list of
+description/amount conditions that classifies an unreconciled transaction as Bank Entry, Payment
+Entry or Transfer. The rules only *record* the match (`matched_transaction_rule`); nothing is
+posted, a person confirms in the banking UI (`/banking`). ERPNext runs them after its own
+statement import, on the "Run Rules" button, and hourly if *Accounts Settings → automatically run
+rules on unreconciled transactions* is on — but **not** for transactions a feed inserts.
+
+So a run that created rows queues the same evaluation ERPNext uses (`sync.run_bank_transaction_rules`,
+enqueued after commit). It is a no-op on ERPNext < v16 or on a site without rules, idempotent on
+re-runs, and still not our logic: we call ERPNext's evaluator, we do not reimplement it.
+
 ## Data mapping
 
 A finAPI transaction becomes a native `Bank Transaction` (see `finapi/mapping.py`):
