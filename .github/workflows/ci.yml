@@ -60,3 +60,91 @@ jobs:
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+
+  frappe-tests:
+    name: Frappe tests (ERPNext ${{ matrix.frappe-branch }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Mirrors frappe/frappe's own CI for version-16 (Python 3.14, Node 24, MariaDB 11.8).
+          - frappe-branch: version-16
+            python-version: "3.14"
+            node-version: "24"
+
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=2s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: erpnext_finapi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: System dependencies
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y redis-server mariadb-client libmariadb-dev libcups2-dev
+
+      - name: Init bench (no assets)
+        run: |
+          pip install frappe-bench
+          bench init frappe-bench \
+            --frappe-branch "${{ matrix.frappe-branch }}" \
+            --skip-assets \
+            --no-backups \
+            --python "$(which python)"
+          cd frappe-bench
+          bench get-app erpnext --branch "${{ matrix.frappe-branch }}" --skip-assets
+          bench get-app "${GITHUB_WORKSPACE}/erpnext_finapi" --skip-assets
+          bench setup requirements --dev
+
+      - name: Create site
+        run: |
+          cd frappe-bench
+          bench set-config -g root_login root
+          bench set-config -g root_password root
+          bench set-config -g admin_password admin
+          bench new-site test_site \
+            --db-host 127.0.0.1 \
+            --db-name test_frappe \
+            --db-password test_frappe \
+            --verbose
+          bench --site test_site set-config allow_tests 1 --parse
+
+      - name: Start redis + workers
+        run: |
+          cd frappe-bench
+          # Only what the test runner needs: redis (cache + queue) and a worker.
+          sed -i '/^watch:/d;/^schedule:/d;/^web:/d;/^socketio:/d' Procfile
+          bench start &> "${GITHUB_WORKSPACE}/bench_start.log" &
+          sleep 10
+
+      - name: Install apps
+        run: |
+          cd frappe-bench
+          bench --site test_site install-app erpnext erpnext_finapi
+
+      - name: Run Frappe tests
+        run: |
+          cd frappe-bench
+          bench --site test_site run-tests --app erpnext_finapi
+
+      - name: Show bench output
+        if: ${{ failure() }}
+        run: cat "${GITHUB_WORKSPACE}/bench_start.log" || true

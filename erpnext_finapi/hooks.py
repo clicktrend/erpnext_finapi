@@ -46,4 +46,8 @@ scheduler_events = {
 after_install = "erpnext_finapi.install.after_install"
 after_migrate = "erpnext_finapi.install.after_migrate"
 
+# Test-site bootstrap: Frappe only runs the hook of the app under test, so a bare CI site
+# would have no Company. No-op on a site that is already set up.
+before_tests = "erpnext_finapi.testing.before_tests"
+
 # Jinja / overrides / doc events are intentionally empty for now.

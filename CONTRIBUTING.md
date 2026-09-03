@@ -36,8 +36,20 @@ Configure **finAPI Settings** with `Environment = Sandbox` and your sandbox clie
 
 ## Tests
 
-- Unit-test `FinApiClient` against recorded/mocked HTTP responses (no live calls in CI).
-- DocType controller logic should be covered where it carries behaviour.
+Two layers, both run in CI:
+
+- **Frappe-free unit tests** in `tests/` — `FinApiClient` against recorded/mocked HTTP responses
+  and the transaction mapping. No site, no database:
+  `python -m unittest discover -s tests -v`
+- **Frappe integration tests** as module-level `erpnext_finapi/test_*.py` files (permission guards,
+  the rule stage after a sync). They need a site:
+  `bench --site <site> run-tests --app erpnext_finapi`
+  CI builds a throw-away bench for them (job `frappe-tests`, ERPNext `version-16`). On a bare site
+  `erpnext_finapi.testing.before_tests` runs the setup wizard; on a populated bench it does nothing.
+
+Keep integration tests **out of DocType folders** when the DocType links to Company: Frappe then
+auto-creates global test records for every link and collides with a populated bench. Never call a
+live finAPI endpoint from a test.
 
 ## The finAPI traps (read before touching the client)
 
