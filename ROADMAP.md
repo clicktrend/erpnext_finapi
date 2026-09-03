@@ -33,6 +33,8 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 - ✅ 90-day SCA re-consent: watchdog task, `Update Required` status, **Update Connection** flow
 - ✅ Verified against a real live mandator: connection adopted, accounts mapped, real
   transactions written as submitted `Bank Transaction`s, re-run created 0 duplicates
+- ✅ After a run that created rows, ERPNext's own **Bank Transaction Rules** (v16+) are queued —
+  the same thing Mint's statement import does. Rules classify only; nothing is posted
 
 ## Phase 3 — WebForm 2.0 & live
 
@@ -49,6 +51,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 
 - ✅ Unit tests for `FinApiClient` and the transaction mapping (Frappe-free, no site needed)
 - ✅ CI runs lint, format, JSON validation, compile **and** the unit tests
+- ✅ CI also runs the Frappe integration tests on a throw-away bench (ERPNext `version-16`, MariaDB)
 - ⬜ Sandbox integration test (needs a sandbox mandator)
 - ⬜ Frappe Cloud Marketplace listing / GitHub release
 - ⬜ Translations (DE/EN)
