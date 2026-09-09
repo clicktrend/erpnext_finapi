@@ -28,7 +28,9 @@ def register(user: str):
 	# creation, so that would leave this record permanently unregisterable.
 	doc.check_permission("write")
 
-	client = get_client()
+	# The user's own environment, not a global one: Sandbox and Live are separate pools,
+	# and finAPI Settings carries the credentials for both.
+	client = get_client(doc.environment)
 	result = client.create_user(
 		user_id=doc.finapi_username or None,
 		password=doc.get_password("finapi_password") if doc.finapi_password else None,

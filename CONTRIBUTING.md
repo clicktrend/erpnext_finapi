@@ -20,7 +20,7 @@ bench --site dev.local migrate
 bench --site dev.local console             # poke at FinApiClient interactively
 ```
 
-Configure **finAPI Settings** with `Environment = Sandbox` and your sandbox client credentials.
+Configure **finAPI Settings**: sandbox client credentials into the **Sandbox Credentials** section, *Default Environment* on `Sandbox`.
 
 ## Code style
 

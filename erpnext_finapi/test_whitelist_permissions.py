@@ -8,6 +8,7 @@ try:
 except ImportError:  # frappe < v16
 	from frappe.tests.utils import FrappeTestCase as IntegrationTestCase
 
+from erpnext_finapi.erpnext_finapi.doctype.finapi_settings.finapi_settings import test_connection
 from erpnext_finapi.erpnext_finapi.doctype.finapi_user.finapi_user import register
 
 UNPRIVILEGED = "finapi-permission-probe@example.com"
@@ -67,3 +68,10 @@ class TestfinAPIUser(IntegrationTestCase):
 		# No assertion on the finAPI call itself — this only pins that the guard does not
 		# reject the people who are supposed to get through.
 		doc.check_permission("write")
+
+	def test_test_connection_refuses_an_unprivileged_caller(self):
+		frappe.set_user(UNPRIVILEGED)
+		# finAPI Settings holds the mandator credentials; a whitelisted self-test on them
+		# must not be a way for any logged-in user to probe them.
+		with self.assertRaises(frappe.PermissionError):
+			test_connection()

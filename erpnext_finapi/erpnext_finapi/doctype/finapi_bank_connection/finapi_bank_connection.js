@@ -5,11 +5,14 @@ const METHOD =
 	"erpnext_finapi.erpnext_finapi.doctype.finapi_bank_connection.finapi_bank_connection.";
 
 frappe.ui.form.on("finAPI Bank Connection", {
-	refresh(frm) {
-		// Available on an unsaved draft too — the bank search is what fills in the bank
-		// id, so hiding it until after the first save is exactly backwards.
-		frm.add_custom_button(__("Search Bank"), () => search_bank(frm));
+	// The search sits in the form, right above the fields it fills in, rather than in
+	// the toolbar: it is a step of filling this section out, not an action on the
+	// finished document — and on an unsaved draft the toolbar is not where you look.
+	search_bank(frm) {
+		search_bank(frm);
+	},
 
+	refresh(frm) {
 		if (frm.is_new()) {
 			frm.set_intro(
 				__(
@@ -86,21 +89,57 @@ function search_bank(frm) {
 	dialog.show();
 }
 
+// Bootstrap's .list-group-item hardcodes `background-color: #fff` while the text colour
+// stays on the theme variable — white on white in dark mode. Frappe ships no themed list
+// primitive for dialogs, so the rows carry their own styles, built from the same CSS
+// variables the Desk uses.
+const RESULT_STYLES = `
+	.finapi-bank-results {
+		max-height: 320px;
+		overflow-y: auto;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-md, 6px);
+		background-color: var(--fg-color);
+	}
+	.finapi-bank-result {
+		display: block;
+		padding: var(--padding-sm, 8px) var(--padding-md, 12px);
+		color: var(--text-color);
+		border-bottom: 1px solid var(--border-color);
+		cursor: pointer;
+	}
+	.finapi-bank-result:last-child { border-bottom: none; }
+	.finapi-bank-result:hover,
+	.finapi-bank-result:focus {
+		background-color: var(--fg-hover-color);
+		color: var(--text-color);
+		text-decoration: none;
+	}
+	.finapi-bank-result-meta {
+		color: var(--text-muted);
+		font-size: var(--text-sm, 12px);
+	}
+`;
+
 function render_banks(frm, dialog, banks) {
 	const wrapper = dialog.fields_dict.results.$wrapper.empty();
+
+	if (!dialog.$wrapper.find(".finapi-bank-result-styles").length) {
+		dialog.$wrapper.append(`<style class="finapi-bank-result-styles">${RESULT_STYLES}</style>`);
+	}
 
 	if (!banks.length) {
 		wrapper.append(`<p class="text-muted">${__("No bank found.")}</p>`);
 		return;
 	}
 
-	const list = $('<div class="list-group"></div>').appendTo(wrapper);
+	const list = $('<div class="finapi-bank-results"></div>').appendTo(wrapper);
 	banks.forEach((bank) => {
 		const interfaces = (bank.interfaces || []).join(", ");
 		$(
-			`<a href="#" class="list-group-item">
+			`<a href="#" class="finapi-bank-result">
 				<b>${frappe.utils.escape_html(bank.name || "")}</b>
-				<div class="text-muted small">
+				<div class="finapi-bank-result-meta">
 					BLZ ${frappe.utils.escape_html(bank.blz || "-")} ·
 					BIC ${frappe.utils.escape_html(bank.bic || "-")} ·
 					ID ${bank.id} · ${frappe.utils.escape_html(interfaces)}
