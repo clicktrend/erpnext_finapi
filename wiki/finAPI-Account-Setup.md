@@ -26,7 +26,9 @@ in [finAPI Settings](Configuration).
 | Live | `https://live.finapi.io` | `https://webform-live.finapi.io` |
 
 > ⚠️ **`webform.finapi.io` does not exist** (DNS fails). Only the `-sandbox` / `-live` variants are
-> valid. The app derives the correct host from the Environment, so you never type it by hand.
+> valid. The app knows both hosts as constants and picks the one belonging to the finAPI User's
+> environment, so you never type a host by hand — and Sandbox and Live can be configured at the
+> same time (one credential section each).
 
 ## 4. Mandator API version (V1 → V2)
 

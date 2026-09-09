@@ -151,11 +151,21 @@ def _ensure_desk_entry():
 
 	A Desktop Icon is named after its label, so a workspace-derived icon can occupy the
 	app tile's name and make the tile creation collide — drop such a stale icon first.
+	The same naming makes a renamed app_title stick: Frappe's builder only asks whether
+	*an* App icon for this app exists, never whether its label is still current, so the
+	old label would survive every migrate. Drop those too and let it rebuild.
 	"""
 	app_title = frappe.get_hooks("app_title", app_name="erpnext_finapi")[0]
 	stale_icon_type = frappe.db.get_value("Desktop Icon", app_title, "icon_type")
 	if stale_icon_type and stale_icon_type != "App":
 		frappe.delete_doc("Desktop Icon", app_title, ignore_permissions=True)
+
+	for renamed in frappe.get_all(
+		"Desktop Icon",
+		filters={"icon_type": "App", "app": "erpnext_finapi", "label": ("!=", app_title)},
+		pluck="name",
+	):
+		frappe.delete_doc("Desktop Icon", renamed, ignore_permissions=True)
 
 	try:
 		for method in frappe.get_hooks("after_app_install", app_name="frappe"):

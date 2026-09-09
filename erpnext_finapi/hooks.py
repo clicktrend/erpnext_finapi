@@ -1,5 +1,7 @@
 app_name = "erpnext_finapi"
-app_title = "ERPNext finAPI"
+# Kept short on purpose: this string is the label under the /desk app tile, and the
+# tile truncates. "ERPNext finAPI" showed up as "ERPNext fin…".
+app_title = "finAPI"
 app_publisher = "Adomio and contributors"
 app_description = "Self-hosted finAPI bank-account integration for ERPNext — bring your own finAPI contract, sync transactions, reconcile natively."
 app_email = "mitgravur@gmail.com"
@@ -13,7 +15,7 @@ add_to_apps_screen = [
 	{
 		"name": "erpnext_finapi",
 		"logo": "/assets/erpnext_finapi/logo.svg",
-		"title": "ERPNext finAPI",
+		"title": "finAPI",
 		"route": "/app/finapi",
 		"has_permission": "erpnext_finapi.permissions.has_app_permission",
 	}

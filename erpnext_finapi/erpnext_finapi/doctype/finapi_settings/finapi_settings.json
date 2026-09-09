@@ -6,16 +6,20 @@
  "field_order": [
   "section_environment",
   "environment",
-  "api_version",
   "column_break_env",
-  "api_host",
-  "webform_host",
-  "section_clients",
-  "data_client_id",
-  "data_client_secret",
-  "column_break_admin",
-  "admin_client_id",
-  "admin_client_secret",
+  "api_version",
+  "section_sandbox",
+  "sandbox_data_client_id",
+  "sandbox_data_client_secret",
+  "column_break_sandbox",
+  "sandbox_admin_client_id",
+  "sandbox_admin_client_secret",
+  "section_live",
+  "live_data_client_id",
+  "live_data_client_secret",
+  "column_break_live",
+  "live_admin_client_id",
+  "live_admin_client_secret",
   "section_sync",
   "auto_sync",
   "initial_sync_days",
@@ -38,10 +42,14 @@
    "fieldname": "environment",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Environment",
+   "label": "Default Environment",
    "options": "Sandbox\nLive",
    "reqd": 1,
-   "description": "Hosts are derived automatically. Sandbox is free and recommended for development."
+   "description": "Preselected for a new finAPI User and used by Test Connection. It does not restrict anything: every finAPI User carries its own environment, and the credentials of that environment are used — so Sandbox and Live can be set up side by side."
+  },
+  {
+   "fieldname": "column_break_env",
+   "fieldtype": "Column Break"
   },
   {
    "default": "V2",
@@ -53,51 +61,62 @@
    "description": "The finAPI mandator must be scoped to V2."
   },
   {
-   "fieldname": "column_break_env",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "api_host",
-   "fieldtype": "Data",
-   "label": "API Host",
-   "read_only": 1,
-   "description": "Derived from Environment."
-  },
-  {
-   "fieldname": "webform_host",
-   "fieldtype": "Data",
-   "label": "WebForm Host",
-   "read_only": 1,
-   "description": "Derived from Environment (webform-sandbox / webform-live)."
-  },
-  {
-   "fieldname": "section_clients",
+   "fieldname": "section_sandbox",
    "fieldtype": "Section Break",
-   "label": "API Clients",
-   "description": "Two finAPI clients. The DATA client handles users/banks/webforms; the ADMIN client is mandatorAdmin-only. Using the wrong one returns 403."
+   "label": "Sandbox Credentials",
+   "description": "sandbox.finapi.io · webform-sandbox.finapi.io — free, meant for development. Two finAPI clients per environment. The DATA client handles users/banks/webforms; the ADMIN client is mandatorAdmin-only and optional (V1→V2 mandator switch). Using the wrong one returns 403."
   },
   {
-   "fieldname": "data_client_id",
+   "fieldname": "sandbox_data_client_id",
    "fieldtype": "Data",
    "label": "Data Client ID"
   },
   {
-   "fieldname": "data_client_secret",
+   "fieldname": "sandbox_data_client_secret",
    "fieldtype": "Password",
    "label": "Data Client Secret"
   },
   {
-   "fieldname": "column_break_admin",
+   "fieldname": "column_break_sandbox",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "admin_client_id",
+   "fieldname": "sandbox_admin_client_id",
    "fieldtype": "Data",
-   "label": "Admin Client ID",
-   "description": "Optional. Only needed for the V1→V2 mandator switch / mandatorAdmin calls."
+   "label": "Admin Client ID"
   },
   {
-   "fieldname": "admin_client_secret",
+   "fieldname": "sandbox_admin_client_secret",
+   "fieldtype": "Password",
+   "label": "Admin Client Secret"
+  },
+  {
+   "fieldname": "section_live",
+   "fieldtype": "Section Break",
+   "label": "Live Credentials",
+   "description": "live.finapi.io · webform-live.finapi.io — the credentials of your production finAPI contract."
+  },
+  {
+   "fieldname": "live_data_client_id",
+   "fieldtype": "Data",
+   "label": "Data Client ID"
+  },
+  {
+   "fieldname": "live_data_client_secret",
+   "fieldtype": "Password",
+   "label": "Data Client Secret"
+  },
+  {
+   "fieldname": "column_break_live",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "live_admin_client_id",
+   "fieldtype": "Data",
+   "label": "Admin Client ID"
+  },
+  {
+   "fieldname": "live_admin_client_secret",
    "fieldtype": "Password",
    "label": "Admin Client Secret"
   },
@@ -163,7 +182,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-23 10:00:00.000000",
+ "modified": "2026-09-09 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "ERPNext finAPI",
  "name": "finAPI Settings",

@@ -17,22 +17,37 @@ in `.env`, never in the repo.
 
 | Field | Meaning |
 |---|---|
-| **Environment** | `Sandbox` (free, for dev) or `Live`. The API & WebForm hosts are derived automatically. |
+| **Default Environment** | Preselected for a new finAPI User, and what **Test Connection** falls back to. It restricts nothing — see below. |
 | **API Version** | `V2` (read-only). Your finAPI mandator must be scoped to V2 — see [finAPI Account Setup](finAPI-Account-Setup). |
-| **API Host / WebForm Host** | Read-only, derived from Environment (`sandbox` / `live`, `webform-sandbox` / `webform-live`). |
-| **Data Client ID / Secret** | The finAPI **data** client — creates users, searches banks, runs webforms. |
-| **Admin Client ID / Secret** | Optional. The **admin** client — `mandatorAdmin` calls and the V1→V2 switch only. |
+| **Sandbox Credentials** | Data Client ID/Secret + optional Admin Client ID/Secret for `sandbox.finapi.io` (free, for development). |
+| **Live Credentials** | The same four fields for `live.finapi.io` — your production contract. |
 | **Redirect URL** | WebForm 2.0 callback URL (must be whitelisted in the finAPI portal). |
 | **Enable Scheduled Sync** | Master switch for the 4×/day sync. Leave it off until your accounts are linked. |
 | **Initial Sync (days)** | How far back the very first sync of a connection reads (default 90). |
 | **Sync Overlap (days)** | Safety overlap re-read on every run (default 2). Duplicates are filtered by finAPI transaction id. |
 | **Consent Warning (days)** | How early to warn before the PSD2 consent expires (default 14). |
 
-Click **Test Connection** to verify the data client credentials. The result is shown under
-*Last Connection Test*.
+Click **Test Connection** to verify the stored client credentials. Every *configured* environment
+is tested, one line each under *Last Connection Test* — with Sandbox and Live side by side, a green
+light for one says nothing about the other.
 
 > ⚠️ **Two clients, two roles.** Using the admin client for data operations (or vice versa)
 > returns `403`. The app keeps them separate; just paste each pair into its own field.
+
+### Sandbox and Live live side by side
+
+The environment is **not** a global mode. Both credential sets are stored at once, and the
+environment of the **finAPI User** decides which one is used — for registration, bank search, SCA
+and every sync. So you can keep a sandbox user for experiments next to the live one that does the
+work, without swapping credentials.
+
+Ask for an environment that has no credentials and the error says so, by name, before any request
+goes out (`no Live credentials configured …`). The finAPI User form warns about it up front.
+
+> Upgrading from ≤ 0.0.2? The single credential set is moved into the half your old *Environment*
+> switch named, automatically, on `bench migrate`
+> (`patches/v0_0_3/split_client_credentials_per_environment.py`). Check the result once, then
+> fill in the other environment if you want it.
 
 ## 2. finAPI User
 
@@ -52,8 +67,13 @@ This user owns the bank connections and is used for the password-grant **user to
 **Already have connections at finAPI?** Run **Discover Bank Connections** on the finAPI User. It
 adopts them (with their accounts) instead of forcing a second SCA consent.
 
-Otherwise create a **finAPI Bank Connection**, pick the finAPI User, **Search Bank**, save, and run
-**Import Connection (SCA)** — see [SCA Flows](SCA-Flows).
+Otherwise create a **finAPI Bank Connection**, pick the finAPI User, hit **Search Bank** (the button
+sits in the form, right above *finAPI Bank Name*), save, and run **Import Connection (SCA)** — see
+[SCA Flows](SCA-Flows).
+
+> Search by the **BLZ from your IBAN**: big banks have dozens of near-identical directory entries.
+> Picking a result also corrects the *Banking Interface* to one the bank actually offers. On a
+> sandbox user the directory deliberately returns finAPI's **test banks**.
 
 Either way the connection's `Accounts` table is then populated. Each finAPI account must point at a
 native ERPNext **Bank Account**:

@@ -84,7 +84,7 @@ bench --site your-site.local migrate
 ## Quickstart (sandbox)
 
 1. Create a free finAPI **sandbox** account and register a *data* client and an *admin* client.
-2. In ERPNext open **finAPI Settings**, set `Environment = Sandbox`, paste both client id/secret pairs, click **Test Connection**.
+2. In ERPNext open **finAPI Settings**, paste both client id/secret pairs into **Sandbox Credentials**, leave *Default Environment* on `Sandbox`, click **Test Connection**.
 3. Create a **finAPI User** for your Company (registers a finAPI user via the data client).
 4. Open **finAPI Bank Connection → New**, **Search Bank**, save, run **Import Connection (SCA)**.
    *(Already have connections at finAPI? Use **Discover Bank Connections** on the finAPI User instead.)*

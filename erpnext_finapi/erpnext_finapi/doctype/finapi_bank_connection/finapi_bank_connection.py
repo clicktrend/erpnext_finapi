@@ -64,15 +64,16 @@ def search_banks(search: str, finapi_user: str) -> list[dict]:
 	"""
 	_check_setup_permission()
 
-	settings = frappe.get_single("finAPI Settings")
 	client, token = get_user_session(finapi_user)
 
-	# finAPI's fake banks are what you want in Sandbox and pure noise in Live.
+	# finAPI's fake banks are what you want in Sandbox and pure noise in Live. Which one
+	# applies follows the finAPI User's environment, carried by the client it produced —
+	# the settings hold both environments at once and cannot answer this.
 	banks = (
 		client.search_banks(
 			search,
 			token=token,
-			is_test_bank=(settings.environment == c.SANDBOX),
+			is_test_bank=(client.environment == c.SANDBOX),
 		).get("banks")
 		or []
 	)

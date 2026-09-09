@@ -9,6 +9,7 @@
   "section_bank",
   "connection_name",
   "bank",
+  "search_bank",
   "bank_name",
   "finapi_bank_id",
   "finapi_connection_id",
@@ -45,6 +46,12 @@
    "label": "ERPNext Bank",
    "options": "Bank",
    "description": "Native ERPNext Bank this connection belongs to."
+  },
+  {
+   "fieldname": "search_bank",
+   "fieldtype": "Button",
+   "label": "Search Bank",
+   "description": "Looks up finAPI's bank directory and fills in name, id and interface."
   },
   {
    "fieldname": "bank_name",
@@ -147,7 +154,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-23 10:00:00.000000",
+ "modified": "2026-09-09 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "ERPNext finAPI",
  "name": "finAPI Bank Connection",

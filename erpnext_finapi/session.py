@@ -21,18 +21,13 @@ def get_user_session(finapi_user: str) -> tuple[FinApiClient, str]:
 
 	A user token (password grant, issued by the DATA client) is what bank search,
 	imports, updates and transaction reads need — a client token returns 403 there.
+
+	The environment comes from the USER, not from a global setting: finAPI user pools are
+	per mandator, a Sandbox user simply does not exist on the Live host. finAPI Settings
+	holds the credentials of both environments side by side, so the two can never
+	contradict each other — the user picks, the settings supply.
 	"""
 	user = frappe.get_doc("finAPI User", finapi_user)
-	settings = frappe.get_single("finAPI Settings")
-
-	# finAPI user pools are per mandator: a Sandbox user simply does not exist on the
-	# Live host. Catching that here turns a puzzling 401 into a clear message.
-	if user.environment != settings.environment:
-		frappe.throw(
-			_("finAPI User {0} belongs to the {1} environment, but finAPI Settings is set to {2}.").format(
-				finapi_user, user.environment, settings.environment
-			)
-		)
 
 	if not user.finapi_username:
 		frappe.throw(_("finAPI User {0} has no username.").format(finapi_user))
@@ -41,7 +36,7 @@ def get_user_session(finapi_user: str) -> tuple[FinApiClient, str]:
 	if not password:
 		frappe.throw(_("finAPI User {0} has no password stored.").format(finapi_user))
 
-	client = get_client()
+	client = get_client(user.environment)
 	token = client.authenticate_user(user.finapi_username, password)
 	return client, token
 
